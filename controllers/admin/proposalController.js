@@ -388,17 +388,22 @@ exports.create = async (req, res, next) => {
         // FIX #20: генерируем пароль и сохраняем до хеширования чтобы отправить клиенту
         const tempPassword = Math.random().toString(36).slice(-8) +
                              Math.random().toString(36).slice(-4).toUpperCase();
-        client = new User({
+        // FIX: Не устанавливаем email в null, а просто не включаем поле, чтобы избежать ошибки уникального индекса
+        const userData = {
           name: newClientName.trim(),
           phone: newClientPhone,
-          email: newClientEmail ? newClientEmail.toLowerCase() : null,
           login: newClientPhone,
           isPhone: true,
           password: tempPassword,   // pre-save хук в User.js хеширует это автоматически
           role: 'client',
           isVerified: true,
           isActive: true
-        });
+        };
+        // Добавляем email только если он указан
+        if (newClientEmail && newClientEmail.trim()) {
+          userData.email = newClientEmail.toLowerCase().trim();
+        }
+        client = new User(userData);
         await client.save();
 
         // Отправляем данные для входа клиенту
