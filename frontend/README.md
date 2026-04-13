@@ -1,1 +1,0 @@
-Frontend React app will be here.
