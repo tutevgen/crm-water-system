@@ -1,0 +1,32 @@
+<!-- views/partials/modals/book-service.ejs -->
+
+<%- include('modal', {
+  show: true,
+  title: 'Заказать обслуживание',
+  content: `
+    <form id="serviceForm" method="POST" action="/book-service">
+      <div class="mb-4">
+        <label for="service" class="block mb-2 text-sm font-medium text-gray-900">Выберите услугу:</label>
+        <select name="service" id="service" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+          <option value="filter-replacement">Замена фильтра</option>
+          <option value="system-maintenance">Обслуживание системы</option>
+          <option value="salt-refill">Дозаправка соли</option>
+        </select>
+      </div>
+
+      <div class="mb-4">
+        <label for="date" class="block mb-2 text-sm font-medium text-gray-900">Выберите дату:</label>
+        <input type="date" name="date" id="date" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+      </div>
+
+      <div class="mb-4">
+        <label for="note" class="block mb-2 text-sm font-medium text-gray-900">Примечание:</label>
+        <textarea name="note" id="note" rows="3" class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500"></textarea>
+      </div>
+
+      <button type="submit" class="w-full text-white bg-blue-700 hover:bg-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center">
+        Отправить заявку
+      </button>
+    </form>
+  `
+}) %>

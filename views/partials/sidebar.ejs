@@ -1,0 +1,85 @@
+<aside class="fixed top-0 left-0 w-64 h-screen bg-white border-r border-gray-200 z-30 flex flex-col">
+  <!-- Логотип -->
+  <div class="p-3 border-b border-gray-200 flex items-center justify-center">
+    <img src="/img/logo.png" alt="Nova Filter" class="h-12 w-auto">
+  </div>
+
+  <!-- Навигация -->
+  <nav class="flex-1 p-4 space-y-2 text-sm overflow-y-auto">
+    <% const rolePath = '/' + (user?.role || 'guest'); %>
+
+    <% const icons = {
+      dashboard: 'home', 
+      docs: 'file-text', 
+      history: 'clock',
+      store: 'shopping-cart', 
+      calendar: 'calendar-days', 
+      clients: 'users',
+      orders: 'clipboard-list', 
+      products: 'package', 
+      proposals: 'file-check',
+      requests: 'inbox', 
+      tasks: 'check-circle', 
+      trips: 'map-pin',
+      managers: 'briefcase', 
+      technicians: 'wrench', 
+      settings: 'settings',
+      system: 'settings'
+    }; %>
+
+    <% const links = {
+      client: [
+        { href: 'dashboard', label: 'Главная' },
+        { href: 'docs', label: 'Документация' },
+        { href: 'history', label: 'История' },
+        { href: 'store', label: 'Продукция' },
+        { href: 'system', label: 'Система' }
+      ],
+      installer: [
+        { href: 'dashboard', label: 'Главная' },
+        { href: 'calendar', label: 'Календарь' },
+        { href: 'requests', label: 'Заявки' },
+        { href: 'trips', label: 'Мои выезды' },
+        { href: 'settings', label: 'Настройки' }
+      ],
+      manager: [
+        { href: 'dashboard', label: 'Главная' },
+        { href: 'calendar', label: 'Календарь' },
+        { href: 'clients', label: 'Клиенты' },
+        { href: 'orders', label: 'Заказы' },
+        { href: 'products', label: 'Продукция' },
+        { href: 'proposals', label: 'Коммерческие предложения' },
+        { href: 'requests', label: 'Заявки' },
+        { href: 'tasks', label: 'Задачи' },
+        { href: 'settings', label: 'Настройки' }
+      ],
+      admin: [
+        { href: 'dashboard', label: 'Главная' },
+        { href: 'calendar', label: 'Календарь' },
+        { href: 'clients', label: 'Клиенты' },
+        { href: 'managers', label: 'Менеджеры' },
+        { href: 'orders', label: 'Заказы' },
+        { href: 'products', label: 'Продукция' },
+        { href: 'proposals', label: 'Коммерческие предложения' },
+        { href: 'requests', label: 'Заявки' },
+        { href: 'tasks', label: 'Задачи' },
+        { href: 'technicians', label: 'Монтажники' },
+        { href: 'settings', label: 'Настройки' }
+      ]
+    }[user?.role || 'guest']; %>
+
+    <% if (links && links.length) { %>
+      <% links.forEach(link => { %>
+        <a href="<%= rolePath + '/' + link.href %>"
+           class="flex items-center gap-2 px-3 py-3 rounded transition
+                  <%= activePage === link.href || activePage.startsWith(link.href + '/') 
+                     ? 'bg-zinc-900 text-white' 
+                     : 'hover:bg-gray-100 text-gray-700' %>">
+          <i data-lucide="<%= icons[link.href] || 'circle' %>" class="w-4 h-4"></i> <%= link.label %>
+        </a>
+      <% }); %>
+    <% } else { %>
+      <div class="text-gray-500 text-xs px-3">Нет доступных разделов</div>
+    <% } %>
+  </nav>
+</aside>

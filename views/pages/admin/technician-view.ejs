@@ -1,0 +1,310 @@
+<%# views/pages/admin/technician-view.ejs %>
+<% layout('layouts/default') %>
+<%
+  var inst = typeof installer !== 'undefined' ? installer : {};
+  var installs = typeof installations !== 'undefined' ? installations : [];
+  var reqs = typeof serviceRequests !== 'undefined' ? serviceRequests : [];
+  var s = typeof stats !== 'undefined' ? stats : {};
+  var fmt = function(n){ return (Number(n)||0).toLocaleString('ru-RU'); };
+  var fmtDate = function(d){ return d ? new Date(d).toLocaleDateString('ru-RU') : '—'; };
+  var avail = inst.availability || 'available';
+  var availNames = { available:'Доступен', busy:'Занят (свой заказ)', vacation:'Отпуск', sick:'Болеет', day_off:'Выходной' };
+  var availColors = { available:'bg-green-100 text-green-700', busy:'bg-yellow-100 text-yellow-700', vacation:'bg-orange-100 text-orange-700', sick:'bg-red-100 text-red-700', day_off:'bg-gray-100 text-gray-600' };
+  var availDots = { available:'bg-green-400', busy:'bg-yellow-400', vacation:'bg-orange-400', sick:'bg-red-400', day_off:'bg-gray-400' };
+  var statusNames = { accepted:'Назначен', accepted_premium:'Назначен (пр.)', in_progress:'Монтаж', installed:'Завершён', new:'Новая', completed:'Выполнена', cancelled:'Отменена' };
+  var statusColors = { accepted:'bg-green-100 text-green-700', accepted_premium:'bg-amber-100 text-amber-700', in_progress:'bg-indigo-100 text-indigo-700', installed:'bg-emerald-100 text-emerald-700', new:'bg-blue-100 text-blue-700', completed:'bg-green-100 text-green-700', cancelled:'bg-gray-100 text-gray-500' };
+  var typeNames = { installation:'Монтаж', refill:'Перезасыпка', maintenance:'ТО', repair:'Ремонт', analysis:'Анализ', other:'Другое' };
+  var typeIcons = { installation:'home', refill:'refresh-cw', maintenance:'wrench', repair:'tool', analysis:'flask-conical', other:'help-circle' };
+%>
+
+<div class="p-4 md:p-6 max-w-6xl mx-auto space-y-6">
+
+  <!-- Хлебные крошки -->
+  <div class="flex items-center gap-2 text-sm text-gray-500">
+    <a href="/admin/technicians" class="hover:text-blue-600">Монтажники</a>
+    <i data-lucide="chevron-right" class="w-4 h-4"></i>
+    <span class="text-gray-900 font-medium"><%= inst.name %></span>
+  </div>
+
+  <!-- Профиль -->
+  <div class="bg-white rounded-2xl shadow-sm border overflow-hidden">
+    <div class="p-6 flex flex-col md:flex-row gap-6">
+      <!-- Аватар -->
+      <div class="flex-shrink-0 relative">
+        <div class="w-24 h-24 rounded-2xl bg-gray-100 overflow-hidden">
+          <% if(inst.avatar){ %>
+            <img src="<%= inst.avatar %>" class="w-full h-full object-cover">
+          <% } else { %>
+            <div class="w-full h-full flex items-center justify-center text-3xl font-bold text-gray-400"><%= inst.name ? inst.name.charAt(0) : '?' %></div>
+          <% } %>
+        </div>
+        <span class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white <%= availDots[avail] %>"></span>
+      </div>
+
+      <!-- Информация -->
+      <div class="flex-1">
+        <div class="flex items-center gap-3 flex-wrap mb-2">
+          <h1 class="text-2xl font-bold text-gray-900"><%= inst.name %></h1>
+          <span class="text-xs px-2.5 py-1 rounded-full font-medium <%= availColors[avail] %>"><%= availNames[avail] %></span>
+          <% if(!inst.isActive){ %><span class="text-xs bg-red-100 text-red-600 px-2.5 py-1 rounded-full font-medium">Деактивирован</span><% } %>
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-x-8 gap-y-2 text-sm text-gray-600">
+          <% if(inst.phone){ %>
+          <div class="flex items-center gap-2">
+            <i data-lucide="phone" class="w-4 h-4 text-gray-400"></i>
+            <a href="tel:<%= inst.phone %>" class="text-blue-600 hover:underline"><%= inst.phone %></a>
+          </div>
+          <% } %>
+          <% if(inst.email){ %>
+          <div class="flex items-center gap-2">
+            <i data-lucide="mail" class="w-4 h-4 text-gray-400"></i>
+            <span><%= inst.email %></span>
+          </div>
+          <% } %>
+          <% if(inst.address){ %>
+          <div class="flex items-center gap-2">
+            <i data-lucide="map-pin" class="w-4 h-4 text-gray-400"></i>
+            <span><%= inst.address %></span>
+          </div>
+          <% } %>
+          <div class="flex items-center gap-2">
+            <i data-lucide="calendar" class="w-4 h-4 text-gray-400"></i>
+            <span>В системе с <%= fmtDate(inst.createdAt) %></span>
+          </div>
+          <% if(inst.lastLogin){ %>
+          <div class="flex items-center gap-2">
+            <i data-lucide="log-in" class="w-4 h-4 text-gray-400"></i>
+            <span>Последний вход: <%= fmtDate(inst.lastLogin) %></span>
+          </div>
+          <% } %>
+          <% if(inst.availabilityNote){ %>
+          <div class="flex items-center gap-2 sm:col-span-2">
+            <i data-lucide="message-circle" class="w-4 h-4 text-gray-400"></i>
+            <span class="italic"><%= inst.availabilityNote %></span>
+            <% if(inst.availabilityUntil){ %><span class="text-xs text-gray-400">(до <%= fmtDate(inst.availabilityUntil) %>)</span><% } %>
+          </div>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Кнопки -->
+      <div class="flex flex-col gap-2 flex-shrink-0">
+        <a href="/admin/technicians/<%= inst._id %>/edit" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 text-center">Редактировать</a>
+        <button class="avail-btn px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200"
+                data-uid="<%= inst._id %>" data-status="<%= avail %>"
+                data-note="<%= (inst.availabilityNote || '').replace(/"/g, '&quot;') %>"
+                data-until="<%= inst.availabilityUntil ? new Date(inst.availabilityUntil).toISOString().split('T')[0] : '' %>">
+          Изменить статус
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Статистика -->
+  <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+    <% [
+      { val: s.activeInstalls||0, lbl: 'Монтажей в работе', bg: 'bg-indigo-50', tc: 'text-indigo-700' },
+      { val: s.activeReqs||0, lbl: 'Заявок в работе', bg: 'bg-orange-50', tc: 'text-orange-700' },
+      { val: s.monthInstalls||0, lbl: 'Монтажей за месяц', bg: 'bg-green-50', tc: 'text-green-700' },
+      { val: s.totalInstalls||0, lbl: 'Всего монтажей', bg: 'bg-gray-50', tc: 'text-gray-700' },
+      { val: fmt(s.revenueMonth||0) + ' ₽', lbl: 'Оборот за месяц', bg: 'bg-emerald-50', tc: 'text-emerald-700' }
+    ].forEach(function(c){ %>
+    <div class="<%= c.bg %> rounded-xl p-4 text-center">
+      <p class="text-2xl font-bold <%= c.tc %>"><%= c.val %></p>
+      <p class="text-xs text-gray-500 mt-0.5"><%= c.lbl %></p>
+    </div>
+    <% }) %>
+  </div>
+
+  <!-- Табы -->
+  <div class="border-b border-gray-200">
+    <nav class="flex gap-4 -mb-px" id="detailTabs">
+      <button data-tab="installs" class="dtab px-4 py-3 text-sm font-medium border-b-2 border-blue-500 text-blue-600">
+        Монтажи <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs ml-1"><%= installs.length %></span>
+      </button>
+      <button data-tab="requests" class="dtab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+        Заявки <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs ml-1"><%= reqs.length %></span>
+      </button>
+      <button data-tab="stats" class="dtab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+        Итоги
+      </button>
+    </nav>
+  </div>
+
+  <!-- Таб: Монтажи -->
+  <div id="tab-installs" class="space-y-3">
+    <% if(installs.length === 0){ %>
+    <div class="bg-white rounded-xl border p-10 text-center text-gray-400">Монтажей пока нет</div>
+    <% } else { installs.forEach(function(p){
+      var items = p.acceptedVariant === 'premium' ? (p.premiumItems || p.items || []) : (p.items || []);
+      var isActive = ['accepted','accepted_premium','in_progress'].includes(p.status);
+    %>
+    <div class="bg-white rounded-xl shadow-sm border hover:shadow-md transition">
+      <div class="p-4">
+        <div class="flex items-start gap-4">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 <%= isActive ? 'bg-indigo-50' : 'bg-emerald-50' %>">
+            <i data-lucide="<%= isActive ? 'truck' : 'check-circle' %>" class="w-5 h-5 <%= isActive ? 'text-indigo-600' : 'text-emerald-600' %>"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap mb-1">
+              <a href="/admin/proposals/<%= p._id %>" class="font-bold text-blue-600 hover:underline"><%= p.proposalNumber %></a>
+              <span class="text-xs px-2 py-0.5 rounded-full font-medium <%= statusColors[p.status] || 'bg-gray-100' %>"><%= statusNames[p.status] || p.status %></span>
+              <% if(p.proposalType){ %><span class="text-xs text-gray-400"><%= typeNames[p.proposalType] || p.proposalType %></span><% } %>
+              <% if(p.acceptedVariant==='premium'){ %><span class="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">Премиум</span><% } %>
+              <span class="text-sm font-bold text-gray-900 ml-auto"><%= fmt(p.acceptedAmount || p.totalPrice) %> ₽</span>
+            </div>
+            <div class="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
+              <span><b><%= p.clientName || '—' %></b></span>
+              <% if(p.clientPhone){ %><a href="tel:<%= p.clientPhone %>" class="text-blue-600"><%= p.clientPhone %></a><% } %>
+              <% if(p.objectAddress){ %><span class="text-gray-500"><%= p.objectAddress %></span><% } %>
+            </div>
+
+            <!-- Оборудование -->
+            <% if(items.length > 0){ %>
+            <div class="mt-2 flex flex-wrap gap-1.5">
+              <% items.forEach(function(item){ %>
+              <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded"><%= item.name %></span>
+              <% }) %>
+            </div>
+            <% } %>
+            <% if(p.pipingMaterialName){ %><p class="text-xs text-gray-400 mt-1">Обвязка: <%= p.pipingMaterialName %></p><% } %>
+
+            <div class="flex gap-4 text-xs text-gray-400 mt-2">
+              <% if(p.acceptedAt){ %><span>Принято: <%= fmtDate(p.acceptedAt) %></span><% } %>
+              <% if(p.installedAt){ %><span class="text-emerald-600 font-medium">Установлено: <%= fmtDate(p.installedAt) %></span><% } %>
+            </div>
+            <% if(p.installNotes){ %><p class="text-xs text-gray-500 mt-1 italic bg-gray-50 rounded px-2 py-1"><%= p.installNotes %></p><% } %>
+          </div>
+        </div>
+      </div>
+    </div>
+    <% }) } %>
+  </div>
+
+  <!-- Таб: Заявки -->
+  <div id="tab-requests" class="space-y-3 hidden">
+    <% if(reqs.length === 0){ %>
+    <div class="bg-white rounded-xl border p-10 text-center text-gray-400">Заявок нет</div>
+    <% } else { reqs.forEach(function(r){ %>
+    <div class="bg-white rounded-xl shadow-sm border">
+      <div class="p-4 flex items-start gap-4">
+        <div class="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center flex-shrink-0">
+          <i data-lucide="<%= typeIcons[r.serviceType] || 'wrench' %>" class="w-5 h-5 text-orange-600"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap mb-1">
+            <span class="font-semibold text-gray-900"><%= typeNames[r.serviceType] || r.serviceType %></span>
+            <span class="text-xs px-2 py-0.5 rounded-full font-medium <%= statusColors[r.status] || 'bg-gray-100' %>"><%= statusNames[r.status] || r.status %></span>
+            <span class="text-xs text-gray-400"><%= fmtDate(r.createdAt) %></span>
+          </div>
+          <div class="text-sm text-gray-600">
+            <b><%= r.clientName || (r.clientId && r.clientId.name) || '—' %></b>
+            <% if(r.clientPhone || (r.clientId && r.clientId.phone)){ %> · <%= r.clientPhone || r.clientId.phone %><% } %>
+            <% if(r.clientId && r.clientId.address){ %> · <%= r.clientId.address %><% } %>
+          </div>
+          <% if(r.comment){ %><p class="text-xs text-gray-500 mt-1"><%= r.comment %></p><% } %>
+          <% if(r.resolvedComment){ %><p class="text-xs text-green-700 bg-green-50 rounded px-2 py-1 mt-1"><b>Результат:</b> <%= r.resolvedComment %></p><% } %>
+          <% if(r.preferredDate){ %><p class="text-xs text-blue-600 mt-1">Дата: <%= fmtDate(r.preferredDate) %></p><% } %>
+          <% if(r.resolvedAt){ %><p class="text-xs text-gray-400 mt-0.5">Выполнено: <%= fmtDate(r.resolvedAt) %></p><% } %>
+        </div>
+      </div>
+    </div>
+    <% }) } %>
+  </div>
+
+  <!-- Таб: Итоги -->
+  <div id="tab-stats" class="hidden">
+    <div class="bg-white rounded-xl shadow-sm border p-6">
+      <h3 class="font-bold text-gray-900 mb-4">Сводная статистика</h3>
+      <div class="grid sm:grid-cols-2 gap-4 text-sm">
+        <div class="space-y-3">
+          <p class="text-gray-600">Всего монтажей: <b class="text-gray-900"><%= s.totalInstalls || 0 %></b></p>
+          <p class="text-gray-600">Монтажей за месяц: <b class="text-gray-900"><%= s.monthInstalls || 0 %></b></p>
+          <p class="text-gray-600">Монтажей за год: <b class="text-gray-900"><%= s.yearInstalls || 0 %></b></p>
+          <p class="text-gray-600">Сейчас в работе: <b class="text-gray-900"><%= s.activeInstalls || 0 %></b></p>
+        </div>
+        <div class="space-y-3">
+          <p class="text-gray-600">Заявок выполнено: <b class="text-gray-900"><%= s.totalReqs || 0 %></b></p>
+          <p class="text-gray-600">Заявок за месяц: <b class="text-gray-900"><%= s.monthReqs || 0 %></b></p>
+          <p class="text-gray-600">Заявок в работе: <b class="text-gray-900"><%= s.activeReqs || 0 %></b></p>
+        </div>
+      </div>
+      <hr class="my-4">
+      <div class="grid sm:grid-cols-3 gap-4">
+        <div class="bg-emerald-50 rounded-xl p-4 text-center">
+          <p class="text-xs text-emerald-600 font-medium">Оборот за месяц</p>
+          <p class="text-xl font-bold text-emerald-700 mt-1"><%= fmt(s.revenueMonth) %> ₽</p>
+        </div>
+        <div class="bg-blue-50 rounded-xl p-4 text-center">
+          <p class="text-xs text-blue-600 font-medium">Оборот за год</p>
+          <p class="text-xl font-bold text-blue-700 mt-1"><%= fmt(s.revenueYear) %> ₽</p>
+        </div>
+        <div class="bg-gray-50 rounded-xl p-4 text-center">
+          <p class="text-xs text-gray-500 font-medium">Оборот общий</p>
+          <p class="text-xl font-bold text-gray-900 mt-1"><%= fmt(s.revenueTotal) %> ₽</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модалка статуса доступности -->
+<div id="availModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+    <div class="p-5 border-b"><h3 class="text-lg font-bold">Изменить доступность</h3></div>
+    <div class="p-5 space-y-4">
+      <input type="hidden" id="availUserId">
+      <div><label class="block text-sm font-medium text-gray-700 mb-1.5">Статус</label>
+        <select id="availStatus" class="w-full border rounded-lg px-4 py-2.5 text-sm">
+          <option value="available">Доступен</option><option value="busy">Занят (свой заказ)</option>
+          <option value="vacation">Отпуск</option><option value="sick">Болеет</option><option value="day_off">Выходной</option>
+        </select></div>
+      <div><label class="block text-sm font-medium text-gray-700 mb-1">Комментарий</label>
+        <input type="text" id="availNote" class="w-full border rounded-lg px-4 py-2.5 text-sm" placeholder="Причина..."></div>
+      <div><label class="block text-sm font-medium text-gray-700 mb-1">Недоступен до</label>
+        <input type="date" id="availUntil" class="w-full border rounded-lg px-4 py-2.5 text-sm"></div>
+    </div>
+    <div class="p-5 border-t flex gap-3 justify-end">
+      <button onclick="document.getElementById('availModal').classList.add('hidden')" class="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg text-sm">Отмена</button>
+      <button onclick="saveAvailability()" class="px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Табы
+document.querySelectorAll('.dtab').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    var tab = this.dataset.tab;
+    document.querySelectorAll('.dtab').forEach(function(b){ b.classList.remove('border-blue-500','text-blue-600'); b.classList.add('border-transparent','text-gray-500'); });
+    this.classList.add('border-blue-500','text-blue-600'); this.classList.remove('border-transparent','text-gray-500');
+    document.getElementById('tab-installs').classList.toggle('hidden', tab !== 'installs');
+    document.getElementById('tab-requests').classList.toggle('hidden', tab !== 'requests');
+    document.getElementById('tab-stats').classList.toggle('hidden', tab !== 'stats');
+  });
+});
+
+// Кнопка статуса
+document.addEventListener('click', function(e) {
+  var btn = e.target.closest('.avail-btn');
+  if (!btn) return;
+  document.getElementById('availUserId').value = btn.dataset.uid;
+  document.getElementById('availStatus').value = btn.dataset.status || 'available';
+  document.getElementById('availNote').value = btn.dataset.note || '';
+  document.getElementById('availUntil').value = btn.dataset.until || '';
+  document.getElementById('availModal').classList.remove('hidden');
+});
+
+function saveAvailability() {
+  var userId = document.getElementById('availUserId').value;
+  fetch('/admin/users/' + userId + '/availability', {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    body: JSON.stringify({
+      availability: document.getElementById('availStatus').value,
+      availabilityNote: document.getElementById('availNote').value.trim(),
+      availabilityUntil: document.getElementById('availUntil').value || null
+    })
+  }).then(function(r){ return r.json(); }).then(function(d){ if(d.success) location.reload(); else alert(d.message); });
+}
+</script>

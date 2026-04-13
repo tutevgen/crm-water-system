@@ -1,0 +1,39 @@
+<%
+  var serviceLabel = currentType === 'refill' ? 'Перезасыпка' : (currentType === 'maintenance' ? 'Техобслуживание' : 'Ремонт');
+  var servicePrice = currentType === 'refill' ? 8000 : (currentType === 'maintenance' ? 5000 : 10000);
+%>
+<div id="step3" class="step-content">
+  <div class="bg-white rounded-xl border shadow-sm p-6">
+    <h2 class="text-lg font-semibold mb-6 flex items-center gap-2">
+      <i data-lucide="settings" class="w-5 h-5 text-blue-500"></i>
+      Услуги
+    </h2>
+    
+    <div class="space-y-4">
+      <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer">
+        <div class="flex items-center gap-3">
+          <input type="checkbox" name="services[delivery]" value="true" class="w-5 h-5 text-blue-600 rounded service-cb">
+          <span class="font-medium">Доставка</span>
+        </div>
+        <input type="number" name="services[deliveryPrice]" value="0" 
+               class="w-28 px-3 py-2 border rounded-lg text-right service-price">
+      </label>
+      
+      <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer">
+        <div class="flex items-center gap-3">
+          <input type="checkbox" name="services[installation]" value="true" checked class="w-5 h-5 text-blue-600 rounded service-cb">
+          <span class="font-medium"><%= serviceLabel %></span>
+        </div>
+        <input type="number" name="services[installationPrice]" value="<%= servicePrice %>" 
+               class="w-28 px-3 py-2 border rounded-lg text-right service-price">
+      </label>
+    </div>
+    
+    <div class="flex justify-end mt-6 pt-4 border-t">
+      <div class="text-right">
+        <span class="text-sm text-gray-500">Итого услуги:</span>
+        <span id="servicesTotal" class="ml-2 text-xl font-bold text-green-600">0 ₽</span>
+      </div>
+    </div>
+  </div>
+</div>

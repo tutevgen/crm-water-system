@@ -1,0 +1,326 @@
+<%# views/pages/admin/client-form.ejs %>
+
+<% layout('layouts/default') %>
+
+<%
+  var isEdit = typeof client !== 'undefined' && client && client._id;
+  var c = isEdit ? client : {};
+  var details = c.companyDetails || {};
+%>
+
+<div class="p-6 max-w-4xl mx-auto">
+  <!-- Навигация -->
+  <div class="flex items-center gap-2 text-sm text-gray-500 mb-6">
+    <a href="/admin/clients" class="hover:text-blue-600">Клиенты</a>
+    <i data-lucide="chevron-right" class="w-4 h-4"></i>
+    <span class="text-gray-900"><%= isEdit ? 'Редактирование' : 'Новый клиент' %></span>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+    <div class="px-6 py-4 border-b border-gray-200">
+      <h1 class="text-xl font-bold text-gray-900">
+        <%= isEdit ? 'Редактирование клиента' : 'Новый клиент' %>
+      </h1>
+    </div>
+    
+    <form id="clientForm" class="p-6 space-y-8">
+      <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+      
+      <!-- Основная информация -->
+      <div>
+        <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <i data-lucide="user" class="w-5 h-5 text-blue-500"></i>
+          Основная информация
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">ФИО / Название *</label>
+            <input type="text" name="name" value="<%= c.name || '' %>" required
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Иванов Иван Иванович">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input type="email" name="email" value="<%= c.email || '' %>"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="email@example.com">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Телефон</label>
+            <input type="tel" name="phone" value="<%= c.phone || '' %>"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="+7 (999) 123-45-67">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Тип клиента</label>
+            <select name="clientType" id="clientTypeSelect"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+              <option value="individual" <%= details.clientType === 'individual' || !details.clientType ? 'selected' : '' %>>Физическое лицо</option>
+              <option value="ip" <%= details.clientType === 'ip' ? 'selected' : '' %>>Индивидуальный предприниматель</option>
+              <option value="company" <%= details.clientType === 'company' ? 'selected' : '' %>>Юридическое лицо</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Адрес -->
+      <div>
+        <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <i data-lucide="map-pin" class="w-5 h-5 text-green-500"></i>
+          Адрес
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Адрес установки / проживания</label>
+            <input type="text" name="address" value="<%= details.address || '' %>"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="г. Москва, ул. Примерная, д. 1">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Город</label>
+            <input type="text" name="city" value="<%= details.city || '' %>"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Москва">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Регион</label>
+            <input type="text" name="region" value="<%= details.region || '' %>"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Московская область">
+          </div>
+        </div>
+      </div>
+      
+      <!-- Реквизиты (для ИП и юр.лиц) -->
+      <div id="companyDetails" class="<%= details.clientType === 'company' || details.clientType === 'ip' ? '' : 'hidden' %>">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <i data-lucide="building" class="w-5 h-5 text-purple-500"></i>
+          Реквизиты организации
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Полное наименование</label>
+            <input type="text" name="fullName" value="<%= details.fullName || '' %>"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="ООО «Компания»">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">ИНН</label>
+            <input type="text" name="inn" value="<%= details.inn || '' %>" maxlength="12"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="1234567890">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">КПП</label>
+            <input type="text" name="kpp" value="<%= details.kpp || '' %>" maxlength="9"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="123456789">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">ОГРН / ОГРНИП</label>
+            <input type="text" name="ogrn" value="<%= details.ogrn || '' %>" maxlength="15"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="1234567890123">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Руководитель</label>
+            <input type="text" name="director" value="<%= details.director || '' %>"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Иванов И.И.">
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Юридический адрес</label>
+            <input type="text" name="legalAddress" value="<%= details.legalAddress || '' %>"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="123456, г. Москва, ул. Примерная, д. 1, офис 100">
+          </div>
+        </div>
+        
+        <!-- Банковские реквизиты -->
+        <h3 class="text-md font-medium text-gray-900 mt-6 mb-4">Банковские реквизиты</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Банк</label>
+            <input type="text" name="bankName" value="<%= details.bankName || '' %>"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="ПАО Сбербанк">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">БИК</label>
+            <input type="text" name="bik" value="<%= details.bik || '' %>" maxlength="9"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="044525225">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Расчётный счёт</label>
+            <input type="text" name="rs" value="<%= details.rs || '' %>" maxlength="20"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="40702810400000000000">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Корр. счёт</label>
+            <input type="text" name="ks" value="<%= details.ks || '' %>" maxlength="20"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="30101810400000000225">
+          </div>
+        </div>
+      </div>
+      
+      <!-- Настройки -->
+      <div>
+        <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <i data-lucide="settings" class="w-5 h-5 text-gray-500"></i>
+          Настройки
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Скидка (%)</label>
+            <input type="number" name="discount" value="<%= c.discount || 0 %>" min="0" max="100" step="1"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Менеджер</label>
+            <select name="manager" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+              <option value="">Не назначен</option>
+              <% if (typeof managers !== 'undefined' && managers.length > 0) { %>
+                <% managers.forEach(function(m) { %>
+                  <option value="<%= m._id %>" <%= c.manager && c.manager.toString() === m._id.toString() ? 'selected' : '' %>><%= m.name %></option>
+                <% }); %>
+              <% } %>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Источник</label>
+            <select name="source" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+              <option value="">Не указан</option>
+              <option value="website" <%= c.source === 'website' ? 'selected' : '' %>>Сайт</option>
+              <option value="referral" <%= c.source === 'referral' ? 'selected' : '' %>>Рекомендация</option>
+              <option value="ads" <%= c.source === 'ads' ? 'selected' : '' %>>Реклама</option>
+              <option value="social" <%= c.source === 'social' ? 'selected' : '' %>>Соц. сети</option>
+              <option value="repeat" <%= c.source === 'repeat' ? 'selected' : '' %>>Повторный клиент</option>
+              <option value="other" <%= c.source === 'other' ? 'selected' : '' %>>Другое</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="mt-4">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Заметки</label>
+          <textarea name="notes" rows="3"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Дополнительная информация о клиенте..."><%= c.notes || '' %></textarea>
+        </div>
+        
+        <div class="flex items-center gap-6 mt-4">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" name="isActive" value="true" <%= c.isActive !== false ? 'checked' : '' %>
+              class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Активный клиент</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" name="isVerified" value="true" <%= c.isVerified ? 'checked' : '' %>
+              class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+            <span class="text-sm text-gray-700">Верифицирован</span>
+          </label>
+        </div>
+      </div>
+      
+      <% if (!isEdit) { %>
+        <!-- Пароль (только при создании) -->
+        <div>
+          <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <i data-lucide="lock" class="w-5 h-5 text-red-500"></i>
+            Доступ к личному кабинету
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Пароль</label>
+              <input type="password" name="password" minlength="6"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Минимум 6 символов">
+              <p class="text-xs text-gray-500 mt-1">Оставьте пустым для автогенерации</p>
+            </div>
+            <div>
+              <label class="flex items-center gap-2 cursor-pointer mt-8">
+                <input type="checkbox" name="sendCredentials" value="true" checked
+                  class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                <span class="text-sm text-gray-700">Отправить данные доступа на email</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      <% } %>
+      
+      <!-- Кнопки -->
+      <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+        <a href="/admin/clients" class="px-4 py-2 text-gray-600 hover:text-gray-900">Отмена</a>
+        <button type="submit" id="saveBtn" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
+          <i data-lucide="save" class="w-4 h-4"></i>
+          <%= isEdit ? 'Сохранить' : 'Создать клиента' %>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function() {
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+  
+  var isEdit = <%= isEdit ? 'true' : 'false' %>;
+  var clientId = '<%= isEdit ? c._id : '' %>';
+  var form = document.getElementById('clientForm');
+  var companyDetails = document.getElementById('companyDetails');
+  var clientTypeSelect = document.getElementById('clientTypeSelect');
+  
+  // Показ/скрытие реквизитов
+  clientTypeSelect.addEventListener('change', function() {
+    if (this.value === 'company' || this.value === 'ip') {
+      companyDetails.classList.remove('hidden');
+    } else {
+      companyDetails.classList.add('hidden');
+    }
+  });
+  
+  // Отправка формы
+  form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    var formData = new FormData(form);
+    var data = {};
+    formData.forEach(function(value, key) {
+      data[key] = value;
+    });
+    
+    // Чекбоксы
+    data.isActive = form.querySelector('input[name="isActive"]').checked;
+    data.isVerified = form.querySelector('input[name="isVerified"]').checked;
+    if (!isEdit) {
+      data.sendCredentials = form.querySelector('input[name="sendCredentials"]').checked;
+    }
+    
+    var url = isEdit ? '/admin/clients/' + clientId : '/admin/clients';
+    var method = isEdit ? 'PUT' : 'POST';
+    
+    try {
+      var res = await fetch(url, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': data._csrf
+        },
+        body: JSON.stringify(data)
+      });
+      
+      var result = await res.json();
+      
+      if (result.success) {
+        window.location.href = '/admin/clients/' + (result.clientId || clientId);
+      } else {
+        alert(result.message || 'Ошибка сохранения');
+      }
+    } catch (err) {
+      alert('Ошибка сети');
+    }
+  });
+})();
+</script>

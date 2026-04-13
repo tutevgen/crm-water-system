@@ -1,0 +1,515 @@
+<% layout(false) %>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>КП <%= p.proposalNumber||'' %> — <%= p.clientName||'' %></title>
+<style>
+@page { size: A4; margin: 12mm 13mm 12mm 13mm; }
+*, *::before, *::after {
+  box-sizing: border-box;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+body {
+  font-family: -apple-system,'Segoe UI','Helvetica Neue',Arial,sans-serif;
+  font-size: 11.5px; color: #1e293b;
+  line-height: 1.5; margin: 0; padding: 0; background: #fff;
+}
+@media screen {
+  body { background: #dde1e7; padding: 24px 14px 60px; }
+  .doc { max-width: 760px; margin: 0 auto; background: #fff; padding: 24px 28px;
+         border-radius: 6px; box-shadow: 0 4px 28px rgba(0,0,0,.18); }
+  .ctrl { position: fixed; top: 12px; right: 12px; display: flex; gap: 8px; z-index: 999; }
+}
+@media print { .ctrl { display: none !important; } .doc { padding: 0; } }
+.c { break-inside: avoid; }
+.bp { padding:8px 16px; background:#111827; color:#fff; border:none; border-radius:7px; font-size:13px; font-weight:600; cursor:pointer; }
+.bc { padding:8px 14px; background:#fff; color:#374151; border:1px solid #d1d5db; border-radius:7px; font-size:13px; cursor:pointer; }
+/* Шапка */
+.hdr { background:linear-gradient(135deg,#111827,#374151); border-radius:9px; padding:18px 22px; color:#fff;
+       display:flex; justify-content:space-between; gap:16px; margin-bottom:10px; }
+.hdr-logo { height:28px; margin-bottom:10px; filter:brightness(0) invert(1); display:block; }
+.hdr-num { font-size:22px; font-weight:900; line-height:1; margin-bottom:4px; }
+.hdr-for { font-size:13px; color:#d1d5db; }
+.hdr-ph  { font-size:14px; font-weight:800; margin-top:8px; }
+.hdr-em  { font-size:10px; color:#9ca3af; margin-top:2px; }
+/* Секция */
+.sec { margin-bottom:10px; }
+.sec-title { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.1em; color:#6b7280;
+             border-bottom:2px solid #111827; padding-bottom:5px; margin-bottom:8px; }
+.card { border:1px solid #e2e8f0; border-radius:8px; padding:11px 15px; margin-bottom:9px; background:#fff; }
+.lbl { font-size:8.5px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#9ca3af; margin-bottom:2px; }
+.val { font-weight:600; font-size:11.5px; }
+/* Объект */
+.obj-g { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+/* Анализ */
+.anal-t { width:100%; border-collapse:collapse; font-size:11px; }
+.anal-t th { background:#111827; color:#fff; padding:6px 10px; text-align:left;
+             font-size:8.5px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; }
+.anal-t td { padding:7px 10px; border-bottom:1px solid #f1f5f9; }
+.anal-t tr:nth-child(even) td { background:#fafafa; }
+.ok  { color:#16a34a; font-weight:700; }
+.bad { color:#dc2626; font-weight:700; }
+.badge-ok  { display:inline-block; background:#dcfce7; color:#166534; border-radius:3px; padding:1px 6px; font-size:8.5px; font-weight:700; }
+.badge-bad { display:inline-block; background:#fee2e2; color:#991b1b; border-radius:3px; padding:1px 6px; font-size:8.5px; font-weight:700; }
+/* До/После */
+.gets-g { display:grid; grid-template-columns:repeat(2,1fr); gap:6px; }
+.gets-i { border:1px solid #e5e7eb; border-radius:5px; padding:8px 10px; background:#fafafa; }
+/* Схема */
+.sch-img { width:100%; max-height:260px; object-fit:contain; border-radius:6px; border:1px solid #e2e8f0; display:block; }
+/* Услуги */
+.svc-r { display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid #f8fafc; font-size:10.5px; }
+.svc-r:last-child { border-bottom:none; }
+/* Рекомендуемые */
+.opts-g { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+.opt-c  { border:1px solid #e5e7eb; border-radius:6px; overflow:hidden; display:flex; }
+.opt-img-box { width:70px; min-width:70px; background:#f9fafb; display:flex; align-items:center; justify-content:center; font-size:22px; border-right:1px solid #e5e7eb; flex-shrink:0; }
+.opt-img-box img { width:70px; height:70px; object-fit:cover; }
+.opt-body  { padding:8px 10px; flex:1; }
+.opt-nm    { font-weight:800; font-size:11.5px; color:#111827; margin-bottom:3px; }
+.opt-ds    { font-size:9.5px; color:#6b7280; margin-bottom:4px; line-height:1.4; }
+.opt-pr    { font-weight:900; font-size:13px; color:#111827; }
+/* Стоимость */
+.total-box { background:#111827; border-radius:8px; padding:12px 16px; margin-bottom:10px; }
+.total-row { display:flex; justify-content:space-between; padding:3px 0; font-size:10.5px; color:#9ca3af; border-bottom:1px solid #1f2937; }
+.total-row:last-child { border-bottom:none; }
+.total-row.disc { color:#6ee7b7; }
+.total-final { display:flex; justify-content:space-between; align-items:center; padding-top:8px; border-top:1px solid #374151; margin-top:4px; }
+.total-lbl { font-size:12px; font-weight:700; color:#d1d5db; text-transform:uppercase; letter-spacing:.05em; }
+.total-val { font-size:26px; font-weight:900; color:#fff; letter-spacing:-.02em; }
+/* Условия */
+.cond-g { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-bottom:9px; }
+.cond-i { border:1px solid #e2e8f0; border-radius:7px; padding:9px 10px; text-align:center; }
+/* Гарантии */
+.war-g  { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; }
+.war-i  { border:1px solid #e2e8f0; border-radius:7px; padding:11px; text-align:center; background:#fafafa; }
+.war-n  { font-size:32px; font-weight:900; color:#111827; line-height:1; }
+/* Включено */
+.inc-g  { display:grid; grid-template-columns:repeat(2,1fr); gap:4px; }
+.inc-i  { display:flex; align-items:center; gap:5px; font-size:10.5px; }
+/* Техусловия */
+.tc-g   { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:9px; }
+.tc-t   { width:100%; border-collapse:collapse; font-size:10.5px; }
+.tc-t td { padding:5px 8px; border-bottom:1px solid #f3f4f6; }
+.tc-t tr:last-child td { border-bottom:none; }
+.tc-t td:first-child { color:#6b7280; }
+.tc-t td:last-child  { font-weight:600; text-align:right; }
+/* Фото */
+.ph-g { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+.ph-i { width:100%; height:180px; object-fit:cover; border-radius:6px; border:1px solid #e2e8f0; display:block; }
+/* Менеджер */
+.mgr    { display:flex; align-items:center; gap:12px; border:1px solid #e2e8f0; border-radius:7px; padding:11px 15px; background:#fafafa; margin-bottom:9px; }
+.mgr-av { width:38px; height:38px; border-radius:50%; background:#111827; color:#fff; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; flex-shrink:0; }
+/* Реквизиты */
+.req-g  { display:grid; grid-template-columns:repeat(2,1fr); gap:2px; }
+.req-r  { display:flex; gap:8px; padding:4px 0; border-bottom:1px solid #f3f4f6; font-size:10.5px; }
+.req-r:last-child { border-bottom:none; }
+.req-l  { color:#9ca3af; width:110px; flex-shrink:0; }
+.req-v  { font-weight:600; color:#111827; }
+/* Подвал */
+.ft { text-align:center; padding-top:9px; margin-top:4px; font-size:9px; color:#9ca3af; border-top:1px solid #e2e8f0; }
+</style>
+</head>
+<body>
+<%
+  var anal      = p.waterAnalysis || {};
+  var items     = p.items || [];
+  var opts      = p.recommendedOptions || [];
+  var svc       = p.services || {};
+  var incs      = p.includes || [];
+  var premItems = p.premiumItems || [];
+  var company   = companyInfo || {};
+  var fmt       = function(n){ return (Number(n)||0).toLocaleString('ru-RU'); };
+
+  var waterParams = [
+    {k:'iron',            lbl:'Железо (Fe)',       u:'мг/л',   norm:0.3},
+    {k:'manganese',       lbl:'Марганец (Mn)',      u:'мг/л',   norm:0.1},
+    {k:'hardness',        lbl:'Жёсткость',          u:'°Ж',     norm:7},
+    {k:'ph',              lbl:'pH',                u:'',       normMin:6,normMax:9},
+    {k:'hydrogen_sulfide',lbl:'Сероводород (H₂S)', u:'мг/л',   norm:0.03},
+    {k:'oxidability',     lbl:'Окисляемость',       u:'мгО₂/л', norm:5},
+    {k:'turbidity',       lbl:'Мутность',           u:'ЕМФ',    norm:2.6},
+    {k:'tds',             lbl:'TDS (минерализация)',u:'мг/л',   norm:1000}
+  ];
+  var hasAnal = waterParams.some(function(wp){ return anal[wp.k]; });
+  var results = {
+    iron:{was:'Желтый налёт, запах железа',gets:'Чистая прозрачная вода без запаха'},
+    manganese:{was:'Осадок, пятна на посуде',gets:'Чистые трубы и бельё'},
+    hardness:{was:'Накипь, поломки техники',gets:'Нет накипи, техника служит дольше'},
+    ph:{was:'Агрессивная вода',gets:'Нейтральный pH, безопасно'},
+    hydrogen_sulfide:{was:'Запах тухлых яиц',gets:'Вода без запаха'},
+    oxidability:{was:'Органика, неприятный привкус',gets:'Чистый вкус воды'},
+    turbidity:{was:'Мутная вода, взвесь',gets:'Прозрачная вода'},
+    tds:{was:'Солёный привкус, минерализация',gets:'Нормальное солесодержание'}
+  };
+  var problems = waterParams.filter(function(wp){
+    if(!anal[wp.k]) return false;
+    var v=parseFloat(anal[wp.k]);
+    if(wp.normMin!=null) return v<wp.normMin||v>wp.normMax;
+    return v>wp.norm;
+  });
+  var optIcons = {uv_sterilizer:'☀️',leak_protection:'🛡',ro_system:'💧',thermal_cover:'🧥',bypass:'🔀'};
+  function groupByCat(arr){
+    var g={},o=[];
+    (arr||[]).forEach(function(item){
+      var c=item.category||'';
+      if(!g[c]){g[c]=[];o.push(c);}
+      g[c].push(item);
+    });
+    return {groups:g,order:o};
+  }
+  var mainEq  = groupByCat(items);
+  var premEq  = groupByCat(premItems);
+  var hasSvc  = svc.delivery||svc.installation||svc.commissioning||svc.chiefInstallation||svc.materials;
+  var svcList = [
+    {k:'delivery',         lbl:'Доставка',            pk:'deliveryPrice'},
+    {k:'installation',     lbl:'Монтаж',              pk:'installationPrice'},
+    {k:'chiefInstallation',lbl:'Шеф-монтаж',          pk:'chiefInstallationPrice'},
+    {k:'commissioning',    lbl:'Пуско-наладка',       pk:'commissioningPrice'},
+    {k:'materials',        lbl:'Расходные материалы', pk:'materialsPrice'}
+  ];
+  var eqCounter = 0;
+  var premCounter = 0;
+%>
+
+<div class="ctrl">
+  <button class="bp" onclick="window.print()">🖨 Печать / PDF</button>
+  <button class="bc" onclick="window.close()">✕ Закрыть</button>
+</div>
+
+<div class="doc">
+
+<!-- ══ ШАПКА ══ -->
+<div class="hdr c">
+  <div>
+    <img src="/img/logo.png" class="hdr-logo" onerror="this.style.display='none'" alt="">
+    <div style="font-size:8px;text-transform:uppercase;letter-spacing:.1em;color:#9ca3af;margin-bottom:2px">Коммерческое предложение</div>
+    <div class="hdr-num">№ <%= p.proposalNumber||'—' %></div>
+    <div class="hdr-for">для <b style="color:#fff"><%= p.clientName||'Клиента' %></b></div>
+  </div>
+  <div style="text-align:right">
+    <div style="font-size:10px;color:#9ca3af;margin-bottom:2px">Дата: <b style="color:#e5e7eb"><%= p.createdAt?new Date(p.createdAt).toLocaleDateString('ru-RU'):'—' %></b></div>
+    <% if(p.validUntil){ %><div style="font-size:10px;color:#9ca3af;margin-bottom:2px">До: <b style="color:#e5e7eb"><%= new Date(p.validUntil).toLocaleDateString('ru-RU') %></b></div><% } %>
+    <% if(company.phone){ %><div class="hdr-ph">📞 <%= company.phone %></div><% } %>
+    <% if(company.email){ %><div class="hdr-em">✉ <%= company.email %></div><% } %>
+  </div>
+</div>
+
+<!-- ══ ОБЪЕКТ ══ -->
+<div class="sec c">
+  <div class="sec-title">Информация об объекте</div>
+  <div class="obj-g">
+    <% if(p.objectAddress){ %><div style="grid-column:1/-1;margin-bottom:5px"><div class="lbl">Адрес</div><div class="val"><%= p.objectAddress %></div></div><% } %>
+    <div><div class="lbl">Тип</div><div class="val"><%= {house:'Частный дом',dacha:'Дача',apartment:'Квартира',commercial:'Коммерческое',production:'Производство'}[p.objectType]||'—' %></div></div>
+    <div><div class="lbl">Источник</div><div class="val"><%= {borehole:'Скважина',well:'Колодец',central:'Центральное',river:'Река/озеро'}[p.waterSource]||'—' %></div></div>
+    <div><div class="lbl">Жильцов</div><div class="val"><%= p.residents||4 %> чел.</div></div>
+    <div><div class="lbl">Точек водоразбора</div><div class="val"><%= p.waterPoints||8 %> шт.</div></div>
+  </div>
+</div>
+
+<!-- ══ АНАЛИЗ ВОДЫ ══ -->
+<% if(hasAnal){ %>
+<div class="sec">
+  <div class="sec-title">Анализ воды</div>
+  <table class="anal-t c">
+    <thead><tr>
+      <th>Показатель</th>
+      <th style="text-align:right">Значение</th>
+      <th style="text-align:right">Норма</th>
+      <th style="text-align:center">Статус</th>
+    </tr></thead>
+    <tbody>
+    <% waterParams.forEach(function(wp){
+      if(!anal[wp.k]) return;
+      var val=parseFloat(anal[wp.k]);
+      var ok = wp.normMin!=null?(val>=wp.normMin&&val<=wp.normMax):(val<=wp.norm);
+    %>
+    <tr>
+      <td style="font-weight:600"><%= wp.lbl %></td>
+      <td style="text-align:right"><span class="<%= ok?'ok':'bad' %>"><%= val %> <%= wp.u %></span></td>
+      <td style="text-align:right;color:#6b7280;font-size:9.5px"><% if(wp.normMin!=null){ %><%= wp.normMin %>–<%= wp.normMax %><% }else{ %>≤ <%= wp.norm %><% } %> <%= wp.u %></td>
+      <td style="text-align:center"><span class="<%= ok?'badge-ok':'badge-bad' %>"><%= ok?'НОРМА':'ПРЕВЫШЕНИЕ' %></span></td>
+    </tr>
+    <% }); %>
+    </tbody>
+  </table>
+</div>
+<% } %>
+
+<!-- ══ ЧТО ИЗМЕНИТСЯ ══ -->
+<% if(problems.length>0){ %>
+<div class="sec c">
+  <div class="sec-title">Результат после установки</div>
+  <div class="gets-g">
+    <% problems.forEach(function(wp){ var r=results[wp.k]; if(!r) return; %>
+    <div class="gets-i">
+      <div style="font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#374151;margin-bottom:4px"><%= wp.lbl %></div>
+      <div style="font-size:10px;color:#dc2626;margin-bottom:2px">— <%= r.was %></div>
+      <div style="font-size:10px;color:#16a34a">+ <%= r.gets %></div>
+    </div>
+    <% }); %>
+  </div>
+</div>
+<% } %>
+
+<!-- ══ СХЕМА ══ -->
+<% if(p.schemaImage){ %>
+<div class="sec c">
+  <div class="sec-title">Технологическая схема</div>
+  <img src="<%= p.schemaImage %>" class="sch-img" alt="Схема">
+</div>
+<% } %>
+
+<!-- ══ ОБОРУДОВАНИЕ (карточный стиль, чёрный) ══ -->
+<% if(items.length>0){ %>
+<div class="sec" style="<%= items.length<=12?'break-inside:avoid':'' %>">
+  <div style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-bottom:9px">
+    <div style="background:#111827;padding:9px 14px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:12px;font-weight:700;color:#fff">📦 Состав оборудования</span>
+      <span style="font-size:9px;color:#9ca3af"><%= items.length %> позиций</span>
+    </div>
+    <% mainEq.order.forEach(function(cat){ var catItems=mainEq.groups[cat]; %>
+    <% if(mainEq.order.length>1){ %><div style="padding:4px 14px;font-size:8.5px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#6b7280;background:#f9fafb;border-bottom:1px solid #f3f4f6"><%= cat %></div><% } %>
+    <% catItems.forEach(function(item){ eqCounter++; %>
+    <div class="c" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid #f3f4f6;background:<%= eqCounter%2===0?'#fafafa':'#fff' %>">
+      <div style="width:22px;height:22px;border-radius:50%;background:#111827;color:#fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0"><%= eqCounter %></div>
+      <div style="width:32px;height:32px;border-radius:5px;border:1px solid #e5e7eb;background:#f9fafb;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden">
+        <% if(item.image){ %><img src="<%= item.image %>" style="width:100%;height:100%;object-fit:contain"><% }else{ %><span style="font-size:14px;color:#d1d5db">📦</span><% } %>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:11px;color:#111827"><%= item.name %></div>
+        <% if(item.description){ %><div style="font-size:9px;color:#6b7280;margin-top:1px">→ <%= item.description %></div><% } %>
+        <% if(item.sku){ %><div style="font-size:8.5px;color:#9ca3af">Арт.: <%= item.sku %></div><% } %>
+      </div>
+      <div style="font-size:10px;color:#6b7280;flex-shrink:0;width:50px;text-align:right"><%= item.quantity||1 %> <%= item.unit||'шт' %></div>
+      <div style="font-size:10px;color:#6b7280;flex-shrink:0;width:78px;text-align:right"><%= fmt(item.price) %> ₽</div>
+      <div style="font-size:11px;font-weight:700;color:#111827;flex-shrink:0;width:78px;text-align:right"><%= fmt((item.quantity||1)*(item.price||0)) %> ₽</div>
+    </div>
+    <% }); }); %>
+    <% if(p.pipingMaterialName){ %>
+    <div style="display:flex;justify-content:space-between;padding:7px 14px;background:#f9fafb;border-top:1px solid #f3f4f6;font-size:10.5px">
+      <span style="color:#6b7280">Обвязка: <b style="color:#374151"><%= p.pipingMaterialName %></b></span>
+      <span style="font-weight:700;color:#111827"><%= fmt(p.pipingMaterialPrice) %> ₽</span>
+    </div>
+    <% } %>
+  </div>
+</div>
+<% } %>
+
+<!-- ══ УСЛУГИ ══ -->
+<% if(hasSvc){ %>
+<div class="sec c">
+  <div class="sec-title">Услуги</div>
+  <% svcList.forEach(function(sv){ if(!svc[sv.k]) return; %>
+  <div class="svc-r"><span style="color:#374151"><%= sv.lbl %></span><span style="font-weight:700"><%= fmt(svc[sv.pk]||0) %> ₽</span></div>
+  <% }); %>
+</div>
+<% } %>
+
+<!-- ══ СТОИМОСТЬ СТАНДАРТ ══ -->
+<div class="total-box c">
+  <div style="margin-bottom:8px">
+    <% if(p.equipmentTotal>0){ %><div class="total-row"><span>Оборудование</span><span><%= fmt(p.equipmentTotal) %> ₽</span></div><% } %>
+    <% if(p.pipingMaterialPrice>0){ %><div class="total-row"><span>Обвязка (<%= p.pipingMaterialName||'' %>)</span><span><%= fmt(p.pipingMaterialPrice) %> ₽</span></div><% } %>
+    <% if(p.servicesTotal>0){ %><div class="total-row"><span>Услуги</span><span><%= fmt(p.servicesTotal) %> ₽</span></div><% } %>
+    <% if(p.clientDiscount>0){ %><div class="total-row disc"><span>Скидка клиента (<%= p.clientDiscount %>%)</span><span>−<%= fmt(p.clientDiscountAmount) %> ₽</span></div><% } %>
+    <% if(p.discount>0){ %><div class="total-row disc"><span>Доп. скидка (<%= p.discount %>%)</span><span>−<%= fmt(p.discountAmount) %> ₽</span></div><% } %>
+  </div>
+  <div class="total-final">
+    <span class="total-lbl">Итого к оплате</span>
+    <span class="total-val"><%= fmt(p.totalPrice) %> ₽</span>
+  </div>
+</div>
+
+<!-- ══ ПРЕМИУМ (синий) ══ -->
+<% if(premItems.length>0){ %>
+<div class="sec" style="<%= premItems.length<=12?'break-inside:avoid':'' %>">
+  <div style="border:1px solid #bfdbfe;border-radius:8px;overflow:hidden;margin-bottom:9px">
+    <div style="background:#1e40af;padding:9px 14px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:12px;font-weight:700;color:#fff">👑 Премиум вариант</span>
+      <span style="font-size:9px;color:#93c5fd">Расширенная комплектация · <%= premItems.length %> позиций</span>
+    </div>
+    <% premEq.order.forEach(function(cat){ var catItems=premEq.groups[cat]; %>
+    <% if(premEq.order.length>1){ %><div style="padding:4px 14px;font-size:8.5px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#3b82f6;background:#eff6ff;border-bottom:1px solid #dbeafe"><%= cat %></div><% } %>
+    <% catItems.forEach(function(item){ premCounter++; %>
+    <div class="c" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid #dbeafe;background:<%= premCounter%2===0?'#f0f8ff':'#fff' %>">
+      <div style="width:22px;height:22px;border-radius:50%;background:#1e40af;color:#fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0"><%= premCounter %></div>
+      <div style="width:32px;height:32px;border-radius:5px;border:1px solid #dbeafe;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden">
+        <% if(item.image){ %><img src="<%= item.image %>" style="width:100%;height:100%;object-fit:contain"><% }else{ %><span style="font-size:14px;color:#93c5fd">👑</span><% } %>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:11px;color:#111827"><%= item.name %></div>
+        <% if(item.description){ %><div style="font-size:9px;color:#3b82f6;margin-top:1px">→ <%= item.description %></div><% } %>
+      </div>
+      <div style="font-size:10px;color:#6b7280;flex-shrink:0;width:50px;text-align:right"><%= item.quantity||1 %> <%= item.unit||'шт' %></div>
+      <div style="font-size:10px;color:#6b7280;flex-shrink:0;width:78px;text-align:right"><%= fmt(item.price) %> ₽</div>
+      <div style="font-size:11px;font-weight:700;color:#111827;flex-shrink:0;width:78px;text-align:right"><%= fmt((item.quantity||1)*(item.price||0)) %> ₽</div>
+    </div>
+    <% }); }); %>
+    <% if(p.premiumPipingMaterialName){ %>
+    <div style="display:flex;justify-content:space-between;padding:7px 14px;background:#eff6ff;border-top:1px solid #dbeafe;font-size:10.5px">
+      <span style="color:#6b7280">Обвязка: <b style="color:#1e40af"><%= p.premiumPipingMaterialName %></b></span>
+      <span style="font-weight:700;color:#1e3a8a"><%= fmt(p.premiumPipingPrice) %> ₽</span>
+    </div>
+    <% } %>
+    <div style="background:#1e3a8a;padding:10px 14px">
+      <% if(p.premiumEquipmentTotal>0){ %><div style="display:flex;justify-content:space-between;font-size:10px;color:#93c5fd;padding:2px 0"><span>Оборудование</span><span><%= fmt(p.premiumEquipmentTotal) %> ₽</span></div><% } %>
+      <% if(p.premiumPipingPrice>0){ %><div style="display:flex;justify-content:space-between;font-size:10px;color:#93c5fd;padding:2px 0"><span>Обвязка</span><span><%= fmt(p.premiumPipingPrice) %> ₽</span></div><% } %>
+      <% if(p.premiumServicesTotal>0){ %><div style="display:flex;justify-content:space-between;font-size:10px;color:#93c5fd;padding:2px 0"><span>Монтаж</span><span><%= fmt(p.premiumServicesTotal) %> ₽</span></div><% } %>
+      <% if(p.premiumNotes){ %><div style="font-size:9px;color:#60a5fa;font-style:italic;margin-top:4px"><%= p.premiumNotes %></div><% } %>
+      <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid rgba(59,130,246,.4);margin-top:7px;padding-top:7px">
+        <span style="font-size:11px;font-weight:700;color:#bfdbfe;text-transform:uppercase;letter-spacing:.05em">Итого Премиум вариант</span>
+        <span style="font-size:22px;font-weight:900;color:#fff"><%= fmt(p.premiumTotal||0) %> ₽</span>
+      </div>
+    </div>
+  </div>
+</div>
+<% } %>
+
+<!-- ══ РЕКОМЕНДУЕМЫЕ ДОПОЛНЕНИЯ ══ -->
+<% if(opts.length>0){ %>
+<div class="sec c">
+  <div class="sec-title">Рекомендуемые дополнения · не входят в стоимость</div>
+  <div class="opts-g">
+    <% opts.forEach(function(opt){ var ico=optIcons[opt.code]||'📦'; %>
+    <div class="opt-c">
+      <% if(opt.image){ %><div class="opt-img-box"><img src="<%= opt.image %>" alt=""></div>
+      <% }else{ %><div class="opt-img-box"><span><%= ico %></span></div><% } %>
+      <div class="opt-body">
+        <div class="opt-nm"><%= opt.name %></div>
+        <% if(opt.description){ %><div class="opt-ds"><%= opt.description %></div><% } %>
+        <div class="opt-pr"><%= fmt(opt.price||0) %> ₽</div>
+      </div>
+    </div>
+    <% }); %>
+  </div>
+</div>
+<% } %>
+
+<!-- ══ УСЛОВИЯ ══ -->
+<div class="sec c">
+  <div class="sec-title">Условия</div>
+  <div class="cond-g">
+    <div class="cond-i"><div style="font-size:18px;margin-bottom:3px">💳</div><div style="font-size:8px;text-transform:uppercase;letter-spacing:.06em;color:#9ca3af;font-weight:700;margin-bottom:3px">Оплата</div><div style="font-weight:700;font-size:12px"><%= p.paymentTermsText||'По согласованию' %></div></div>
+    <div class="cond-i"><div style="font-size:18px;margin-bottom:3px">🚚</div><div style="font-size:8px;text-transform:uppercase;letter-spacing:.06em;color:#9ca3af;font-weight:700;margin-bottom:3px">Доставка</div><div style="font-weight:700;font-size:12px"><%= p.deliveryTimeText||'По согласованию' %></div></div>
+    <div class="cond-i"><div style="font-size:18px;margin-bottom:3px">🔧</div><div style="font-size:8px;text-transform:uppercase;letter-spacing:.06em;color:#9ca3af;font-weight:700;margin-bottom:3px">Монтаж</div><div style="font-weight:700;font-size:12px"><%= p.installationTimeText||'—' %></div></div>
+  </div>
+</div>
+
+<!-- ══ ГАРАНТИИ ══ -->
+<div class="sec c">
+  <div class="sec-title">Гарантийные обязательства</div>
+  <div class="war-g">
+    <div class="war-i"><div style="font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;margin-bottom:5px">Оборудование</div><div class="war-n"><%= p.warrantyEquipment||24 %></div><div style="font-size:11px;color:#6b7280;margin-top:2px">месяцев</div></div>
+    <div class="war-i"><div style="font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;margin-bottom:5px">Монтаж</div><div class="war-n"><%= p.warrantyInstallation||24 %></div><div style="font-size:11px;color:#6b7280;margin-top:2px">месяцев</div></div>
+    <div class="war-i"><div style="font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;margin-bottom:5px">Качество воды</div><div class="war-n"><%= p.warrantyWater||12 %></div><div style="font-size:11px;color:#6b7280;margin-top:2px">месяцев</div></div>
+  </div>
+</div>
+
+<!-- ══ ВКЛЮЧЕНО ══ -->
+<% if(incs.length>0){ %>
+<div class="sec c">
+  <div class="sec-title">Включено в стоимость</div>
+  <div class="inc-g">
+    <% incs.forEach(function(inc){ %><div class="inc-i"><div style="width:6px;height:6px;border-radius:50%;background:#111827;flex-shrink:0"></div><span style="color:#374151"><%= inc %></span></div><% }); %>
+  </div>
+</div>
+<% } %>
+
+<!-- ══ ТЕХУСЛОВИЯ + ОБСЛУЖИВАНИЕ ══ -->
+<div class="sec">
+  <div class="sec-title">Технические условия и обслуживание</div>
+  <div class="tc-g">
+    <div class="card c">
+      <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#374151;margin-bottom:7px">Условия эксплуатации</div>
+      <table class="tc-t">
+        <tr><td>Давление на входе (min)</td><td>2.5 атм</td></tr>
+        <tr><td>Давление на входе (max)</td><td>5 атм</td></tr>
+        <tr><td>Электрическая сеть</td><td>220 В</td></tr>
+        <tr><td>Температура воздуха</td><td>5 – 35 °С</td></tr>
+        <tr><td>Наличие канализации</td><td>Обязательно</td></tr>
+      </table>
+    </div>
+    <div class="card c">
+      <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#374151;margin-bottom:7px">Периодичность обслуживания</div>
+      <table class="tc-t">
+        <tr><td>Замена сорбентов</td><td>1 раз в 2 года</td></tr>
+        <tr><td>Замена смолы</td><td>1 раз в 5–7 лет</td></tr>
+        <tr><td>Таблетированная соль</td><td>~1 мешок в месяц</td></tr>
+        <tr><td>Угольный картридж</td><td>1 раз в 6+ мес.</td></tr>
+        <tr><td>Плановое ТО</td><td>1 раз в год</td></tr>
+      </table>
+      <div style="font-size:9px;color:#9ca3af;margin-top:5px;font-style:italic">* Сроки зависят от качества исходной воды</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ФОТО РАБОТ ══ -->
+<% if(p.workPhotos&&p.workPhotos.length>0){ %>
+<div class="sec" style="<%= p.workPhotos.length<=4?'break-inside:avoid':'' %>">
+  <div class="sec-title">Примеры выполненных работ</div>
+  <div class="ph-g">
+    <% p.workPhotos.forEach(function(photo){ %><img src="<%= photo %>" class="ph-i" alt="Работа"><% }); %>
+  </div>
+</div>
+<% } %>
+
+<!-- ══ ПРИМЕЧАНИЯ ══ -->
+<% if(p.notes){ %>
+<div class="sec c">
+  <div class="sec-title">Примечания</div>
+  <div style="font-size:10.5px;color:#374151;line-height:1.7;border:1px solid #e2e8f0;border-radius:6px;padding:10px 14px;background:#fafafa"><%= p.notes %></div>
+</div>
+<% } %>
+
+<!-- ══ МЕНЕДЖЕР ══ -->
+<% if(p.managerName){ %>
+<div class="mgr c">
+  <div class="mgr-av"><%= p.managerName.charAt(0).toUpperCase() %></div>
+  <div>
+    <div style="font-weight:700;font-size:13px"><%= p.managerName %></div>
+    <div style="font-size:9px;color:#9ca3af;margin-bottom:2px">Персональный менеджер</div>
+    <div style="font-size:10.5px">
+      <% if(p.managerPhone){ %>📞 <%= p.managerPhone %><% } %>
+      <% if(p.managerPhone&&p.managerEmail){ %> · <% } %>
+      <% if(p.managerEmail){ %>✉ <%= p.managerEmail %><% } %>
+    </div>
+  </div>
+</div>
+<% } %>
+
+<!-- ══ РЕКВИЗИТЫ ══ -->
+<div class="sec c">
+  <div class="sec-title">Реквизиты компании</div>
+  <div class="card">
+    <div class="req-g">
+      <% [
+        ['Наименование', company.fullName||company.name||'ООО "Нова Фильтр"'],
+        ['ИНН', company.inn||'7622019627'],
+        ['КПП', company.kpp||'762201001'],
+        ['Банк', company.bank||'Альфа-Банк'],
+        ['Телефон', company.phone||'8 966-199-97-63'],
+        ['Email', company.email||'info@nova-filter.ru'],
+        ['Сайт', company.website||'www.nova-filter.ru']
+      ].forEach(function(r){ %>
+      <div class="req-r"><span class="req-l"><%= r[0] %></span><span class="req-v"><%= r[1] %></span></div>
+      <% }); %>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ПОДВАЛ ══ -->
+<div class="ft">
+  КП действительно до <%= p.validUntil?new Date(p.validUntil).toLocaleDateString('ru-RU'):'—' %>
+  <% if(company.phone){ %> · <%= company.phone %><% } %>
+  <% if(company.email){ %> · <%= company.email %><% } %>
+</div>
+
+</div>
+
+<script>
+  window.addEventListener('load',function(){ setTimeout(function(){ window.print(); },900); });
+</script>
+</body>
+</html>

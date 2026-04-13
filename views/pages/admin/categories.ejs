@@ -1,0 +1,60 @@
+<% layout('layouts/default') %>
+<% title = 'Категории' %>
+
+<div class="max-w-5xl mx-auto p-6">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">Категории и подкатегории</h1>
+    <button id="openCategoryBtn" class="bg-gray-900 text-white px-4 py-2 rounded hover:bg-gray-800 transition">
+      + Добавить категорию
+    </button>
+  </div>
+
+  <div class="bg-white rounded-xl p-4">
+    <% if (categories.length > 0) { %>
+      <ul class="space-y-4">
+        <% categories.forEach(cat => { %>
+          <li>
+            <details class="bg-gray-50 rounded transition">
+              <summary class="cursor-pointer px-4 py-2 text-gray-800 hover:bg-gray-100 text-base font-medium rounded flex justify-between items-center">
+                <span><%= cat.name %> (<%= cat.children.length %>)</span>
+                <% if (!cat.children.length && !cat.productCount) { %>
+                  <button onclick="deleteCategory('<%= cat._id %>')" class="text-red-600 hover:underline text-sm">Удалить</button>
+                <% } %>
+              </summary>
+
+              <% if (cat.children.length > 0) { %>
+                <ul class="pl-6 py-2 space-y-1">
+                  <% cat.children.forEach(sub => { %>
+                    <li class="flex justify-between items-center px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded">
+                      <span><%= sub.name %> 
+                        <% if (sub.productCount) { %>
+                          — товаров: <%= sub.productCount %>
+                        <% } %>
+                      </span>
+                      <div class="flex gap-2">
+                        <button onclick="editCategory('<%= sub._id %>', '<%= sub.name %>', '<%= sub.parent %>')" class="text-blue-600 hover:underline">Редактировать</button>
+                        <% if (!sub.productCount) { %>
+                          <button onclick="deleteCategory('<%= sub._id %>')" class="text-red-600 hover:underline">Удалить</button>
+                        <% } %>
+                      </div>
+                    </li>
+                  <% }) %>
+                </ul>
+              <% } else { %>
+                <p class="text-sm px-4 py-2 text-gray-400">Подкатегорий нет</p>
+              <% } %>
+            </details>
+          </li>
+        <% }) %>
+      </ul>
+    <% } else { %>
+      <p class="text-sm text-gray-500">Категории отсутствуют.</p>
+    <% } %>
+  </div>
+</div>
+
+<%- include('../../partials/modals/category-form') %>
+<script>
+  window.csrfToken = '<%= csrfToken %>';
+</script>
+<script src="/js/categories.js"></script>

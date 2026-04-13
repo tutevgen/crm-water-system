@@ -1,0 +1,46 @@
+<tbody class="divide-y divide-gray-200">
+  <% products.forEach(product => { %>
+    <tr class="hover:bg-gray-50 transition" data-id="<%= product._id %>" data-product='<%= safeJSON(product) %>'>
+      <td class="p-3">
+        <% if (product.photo) { %>
+          <img src="<%= product.photo %>" alt="Фото"
+               class="w-14 h-14 object-cover rounded border border-gray-300 shadow-sm" />
+        <% } else { %>
+          <div class="w-14 h-14 bg-gray-100 rounded flex items-center justify-center text-gray-400">—</div>
+        <% } %>
+      </td>
+      <td class="p-3 font-medium text-gray-900 max-w-xs break-words">
+        <%= product.name %>
+      </td>
+      <td class="p-3 text-gray-700 text-sm">
+        <%= product.category?.name || '—' %>
+      </td>
+      <td class="p-3 text-sm text-green-700 font-semibold whitespace-nowrap">
+        <%= product.price %> ₽
+      </td>
+      <td class="p-3 text-sm text-blue-700 whitespace-nowrap">
+        <%= product.wholesalePrice || '—' %> ₽
+      </td>
+      <td class="p-3 text-sm text-gray-600">
+        <%= product.warehouse || '—' %>
+      </td>
+      <!-- Новая колонка "Видимость" -->
+      <td class="p-3 text-sm">
+        <label class="inline-flex items-center cursor-pointer">
+          <input type="checkbox" class="toggle-visibility sr-only peer"
+                 data-id="<%= product._id %>"
+                 <%= product.isVisible ? 'checked' : '' %>>
+          <div class="relative w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+        </label>
+      </td>
+      <td class="p-7 flex gap-2 items-center">
+        <button class="text-blue-600 hover:text-blue-800 edit-product-btn" title="Редактировать">
+          <i data-lucide="pencil" class="w-5 h-5"></i>
+        </button>
+        <button class="text-red-600 hover:text-red-800 delete-product-btn" title="Удалить">
+          <i data-lucide="trash-2" class="w-5 h-5"></i>
+        </button>
+      </td>
+    </tr>
+  <% }) %>
+</tbody>

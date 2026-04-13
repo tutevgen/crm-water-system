@@ -1,0 +1,259 @@
+<style>
+  /* ============================================
+     НАВИГАЦИЯ ПО ШАГАМ
+     ============================================ */
+  
+  .step-item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: all 0.3s ease;
+  }
+  
+  .step-circle {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.875rem;
+    background: #e5e7eb;
+    color: #6b7280;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+  }
+  
+  /* АКТИВНЫЙ ШАГ */
+  .step-item.active .step-circle {
+    background: #3b82f6;
+    color: white;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+    transform: scale(1.1);
+  }
+  
+  .step-item.active .step-label {
+    color: #3b82f6;
+    font-weight: 600;
+  }
+  
+  /* ЗАВЕРШЁННЫЙ ШАГ */
+  .step-item.done .step-circle {
+    background: #10b981;
+    color: white;
+  }
+  
+  .step-item.done .step-circle::after {
+    content: '✓';
+    position: absolute;
+    font-size: 1rem;
+  }
+  
+  .step-label {
+    font-size: 0.75rem;
+    margin-top: 0.5rem;
+    color: #6b7280;
+    transition: all 0.3s ease;
+  }
+  
+  .step-line {
+    height: 2px;
+    background: #e5e7eb;
+    transition: all 0.3s ease;
+  }
+  
+  .step-line.active {
+    background: #3b82f6;
+  }
+  
+  /* ============================================
+     КОНТЕНТ ШАГОВ
+     ============================================ */
+  
+  .step-content {
+    display: none;
+    animation: fadeIn 0.3s ease-in;
+  }
+  
+  .step-content.active {
+    display: block;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  /* ============================================
+     АНАЛИЗ ВОДЫ
+     ============================================ */
+  
+  .analysis-card {
+    transition: all 0.3s ease;
+  }
+  
+  .analysis-card.exceeded {
+    background: #fef2f2 !important;
+    border-color: #fca5a5 !important;
+  }
+  
+  .analysis-card.exceeded input {
+    color: #dc2626;
+    font-weight: 600;
+  }
+  
+  .analysis-card.exceeded::before {
+    content: '⚠️';
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    font-size: 1.25rem;
+  }
+  
+  /* ============================================
+     КЛИЕНТЫ
+     ============================================ */
+  
+  .client-option {
+    transition: all 0.2s ease;
+  }
+  
+  .client-option.selected {
+    background: #eff6ff !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+  
+  .client-option:hover {
+    background: #f9fafb;
+    border-color: #d1d5db;
+  }
+  
+  /* ============================================
+     ГАЛЕРЕЯ (СХЕМЫ И ФОТО)
+     ============================================ */
+  
+  .scheme-thumb,
+  .photo-thumb {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  .scheme-thumb:hover,
+  .photo-thumb:hover {
+    border-color: #3b82f6;
+    transform: scale(1.05);
+  }
+  
+  .scheme-thumb.selected,
+  .photo-thumb.selected {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  }
+  
+  .scheme-thumb.selected::after,
+  .photo-thumb.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 0.25rem;
+    right: 0.25rem;
+    background: #3b82f6;
+    color: white;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: bold;
+  }
+  
+  /* ============================================
+     МОДАЛЬНОЕ ОКНО
+     ============================================ */
+  
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 50;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    animation: fadeInModal 0.2s ease;
+  }
+  
+  .modal-overlay.active {
+    display: flex;
+  }
+  
+  @keyframes fadeInModal {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  .modal-overlay > div {
+    animation: slideUpModal 0.3s ease;
+  }
+  
+  @keyframes slideUpModal {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  
+  /* ============================================
+     ПОЗИЦИИ ОБОРУДОВАНИЯ
+     ============================================ */
+  
+  .item-row {
+    transition: all 0.2s ease;
+  }
+  
+  .item-row:hover {
+    background: #f9fafb;
+  }
+  
+  .item-number {
+    flex-shrink: 0;
+  }
+  
+  /* ============================================
+     УТИЛИТЫ
+     ============================================ */
+  
+  .hidden {
+    display: none !important;
+  }
+  
+  /* Плавная прокрутка */
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Фокус для доступности */
+  *:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+  }
+  
+  /* Скрыть стрелки у number input в Chrome/Safari */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  
+  /* Скрыть стрелки у number input в Firefox */
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+</style>

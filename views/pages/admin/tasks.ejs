@@ -1,0 +1,143 @@
+<%# views/pages/admin/tasks.ejs %>
+<% layout('layouts/default') %>
+<%
+  var installers = typeof taskInstallers !== 'undefined' ? taskInstallers : [];
+  var unReqs = typeof unassignedReqs !== 'undefined' ? unassignedReqs : [];
+  var unInst = typeof unassignedInstalls !== 'undefined' ? unassignedInstalls : [];
+  var fmt = function(n){ return (Number(n)||0).toLocaleString('ru-RU'); };
+  var fmtDate = function(d){ return d ? new Date(d).toLocaleDateString('ru-RU') : '—'; };
+  var typeNames = { maintenance:'ТО', refill:'Перезасыпка', repair:'Ремонт', analysis:'Анализ', other:'Заявка' };
+%>
+
+<div class="p-4 md:p-6 max-w-6xl mx-auto space-y-6">
+
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">Задачи и загрузка</h1>
+    <p class="text-sm text-gray-500 mt-1">Распределение работ между монтажниками</p>
+  </div>
+
+  <div class="grid lg:grid-cols-3 gap-5">
+
+    <!-- Нераспределённые заявки -->
+    <div class="bg-white rounded-xl shadow-sm border">
+      <div class="p-4 border-b bg-red-50 rounded-t-xl">
+        <div class="flex items-center gap-2">
+          <i data-lucide="alert-circle" class="w-5 h-5 text-red-500"></i>
+          <h2 class="font-bold text-red-900">Без монтажника</h2>
+          <span class="ml-auto text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-medium"><%= unReqs.length + unInst.length %></span>
+        </div>
+      </div>
+      <div class="divide-y max-h-[500px] overflow-y-auto">
+        <% if(unReqs.length === 0 && unInst.length === 0){ %>
+          <div class="p-6 text-center text-gray-400 text-sm">Всё распределено</div>
+        <% } %>
+        <% unInst.forEach(function(p){ %>
+        <div class="p-3 hover:bg-gray-50">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+            <span class="text-xs font-bold text-indigo-700">МОНТАЖ</span>
+            <span class="text-xs text-gray-400"><%= p.proposalNumber %></span>
+          </div>
+          <p class="text-sm font-medium text-gray-900"><%= p.clientName || '—' %></p>
+          <p class="text-xs text-gray-500"><%= p.objectAddress || '' %></p>
+          <p class="text-xs font-semibold text-gray-700 mt-1"><%= fmt(p.totalPrice) %> ₽</p>
+          <select onchange="assignOrder('<%= p._id %>', this.value)" class="mt-2 w-full border rounded px-2 py-1 text-xs bg-white">
+            <option value="">Назначить монтажника →</option>
+            <% installers.forEach(function(inst){ %><option value="<%= inst._id %>"><%= inst.name %> (<%= inst.totalActive %> задач)</option><% }) %>
+          </select>
+        </div>
+        <% }) %>
+        <% unReqs.forEach(function(r){ %>
+        <div class="p-3 hover:bg-gray-50">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="w-2 h-2 rounded-full bg-orange-400"></span>
+            <span class="text-xs font-bold text-orange-700"><%= typeNames[r.serviceType] || 'ЗАЯВКА' %></span>
+            <span class="text-xs text-gray-400"><%= fmtDate(r.createdAt) %></span>
+          </div>
+          <p class="text-sm font-medium text-gray-900"><%= r.clientName || (r.clientId && r.clientId.name) || '—' %></p>
+          <% if(r.clientId && r.clientId.address){ %><p class="text-xs text-gray-500"><%= r.clientId.address %></p><% } %>
+          <select onchange="assignRequest('<%= r._id %>', this.value)" class="mt-2 w-full border rounded px-2 py-1 text-xs bg-white">
+            <option value="">Назначить монтажника →</option>
+            <% installers.forEach(function(inst){ %><option value="<%= inst._id %>"><%= inst.name %> (<%= inst.totalActive %> задач)</option><% }) %>
+          </select>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+
+    <!-- Монтажники и их загрузка -->
+    <div class="lg:col-span-2 space-y-4">
+      <% if(installers.length === 0){ %>
+      <div class="bg-white rounded-xl shadow-sm border p-12 text-center">
+        <i data-lucide="users" class="w-16 h-16 mx-auto text-gray-300 mb-4"></i>
+        <p class="text-gray-500">Монтажников нет. <a href="/admin/technicians" class="text-blue-600 hover:underline">Добавить</a></p>
+      </div>
+      <% } else { installers.forEach(function(inst){ %>
+      <div class="bg-white rounded-xl shadow-sm border hover:shadow-md transition">
+        <div class="p-4 flex items-center gap-4">
+          <!-- Аватар -->
+          <div class="w-12 h-12 rounded-xl bg-gray-100 overflow-hidden flex-shrink-0">
+            <% if(inst.avatar){ %>
+              <img src="<%= inst.avatar %>" alt="" class="w-full h-full object-cover">
+            <% } else { %>
+              <div class="w-full h-full flex items-center justify-center text-lg font-bold text-gray-400"><%= inst.name ? inst.name.charAt(0) : '?' %></div>
+            <% } %>
+          </div>
+          <!-- Инфо -->
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <h3 class="font-bold text-gray-900"><%= inst.name %></h3>
+              <% if(!inst.isActive){ %><span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">Неактивен</span><% } %>
+            </div>
+            <div class="flex gap-3 text-xs text-gray-500 mt-0.5">
+              <% if(inst.phone){ %><span><%= inst.phone %></span><% } %>
+              <% if(inst.email){ %><span><%= inst.email %></span><% } %>
+              <% if(inst.lastLogin){ %><span>Был: <%= fmtDate(inst.lastLogin) %></span><% } %>
+            </div>
+          </div>
+          <!-- Счётчики -->
+          <div class="flex gap-3 flex-shrink-0">
+            <div class="text-center px-3 py-1 bg-orange-50 rounded-lg">
+              <p class="text-lg font-bold text-orange-700"><%= inst.activeReqs %></p>
+              <p class="text-[10px] text-orange-600">Заявки</p>
+            </div>
+            <div class="text-center px-3 py-1 bg-indigo-50 rounded-lg">
+              <p class="text-lg font-bold text-indigo-700"><%= inst.activeInstalls %></p>
+              <p class="text-[10px] text-indigo-600">Монтажи</p>
+            </div>
+            <div class="text-center px-3 py-1 bg-green-50 rounded-lg">
+              <p class="text-lg font-bold text-green-700"><%= inst.completedMonth %></p>
+              <p class="text-[10px] text-green-600">Мес.</p>
+            </div>
+          </div>
+        </div>
+        <% if(inst.totalActive > 0){ %>
+        <div class="px-4 pb-3">
+          <div class="w-full bg-gray-100 rounded-full h-2">
+            <div class="h-2 rounded-full transition-all <%= inst.totalActive > 5 ? 'bg-red-500' : inst.totalActive > 3 ? 'bg-yellow-500' : 'bg-green-500' %>"
+                 style="width: <%= Math.min(inst.totalActive * 15, 100) %>%"></div>
+          </div>
+        </div>
+        <% } %>
+      </div>
+      <% }) } %>
+    </div>
+  </div>
+</div>
+
+<script>
+function assignRequest(id, installerId) {
+  if(!installerId) return;
+  fetch('/admin/requests/' + id + '/assign', {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    body: JSON.stringify({ installerId: installerId })
+  }).then(r => r.json()).then(d => { if(d.success) location.reload(); else alert(d.message); });
+}
+function assignOrder(id, installerId) {
+  if(!installerId) return;
+  fetch('/admin/orders/' + id + '/assign', {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    body: JSON.stringify({ installerId: installerId })
+  }).then(r => r.json()).then(d => { if(d.success) location.reload(); else alert(d.message); });
+}
+</script>

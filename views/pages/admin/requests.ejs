@@ -1,0 +1,126 @@
+<%# views/pages/admin/requests.ejs %>
+<% layout('layouts/default') %>
+<%
+  var reqs = typeof requests !== 'undefined' ? requests : [];
+  var c = typeof reqCounts !== 'undefined' ? reqCounts : {};
+  var instList = typeof installersList !== 'undefined' ? installersList : [];
+  var fmtDate = function(d){ return d ? new Date(d).toLocaleDateString('ru-RU') : '—'; };
+  var typeNames = { maintenance:'Плановое ТО', refill:'Перезасыпка', repair:'Ремонт', analysis:'Анализ воды', other:'Другое' };
+  var typeIcons = { maintenance:'wrench', refill:'refresh-cw', repair:'tool', analysis:'flask-conical', other:'help-circle' };
+  var statusNames = { new:'Новая', in_progress:'В работе', completed:'Выполнена', cancelled:'Отменена' };
+  var statusColors = { new:'bg-blue-100 text-blue-700', in_progress:'bg-yellow-100 text-yellow-700', completed:'bg-green-100 text-green-700', cancelled:'bg-gray-100 text-gray-500' };
+%>
+
+<div class="p-4 md:p-6 max-w-6xl mx-auto space-y-5">
+
+  <div class="flex items-center justify-between flex-wrap gap-3">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Заявки на обслуживание</h1>
+      <p class="text-sm text-gray-500 mt-1">Заявки от клиентов на сервис, ТО, ремонт</p>
+    </div>
+  </div>
+
+  <!-- Статусы -->
+  <div class="flex flex-wrap gap-2">
+    <a href="?status=all" class="px-4 py-2 rounded-lg text-sm font-medium transition <%= reqStatus==='all' ? 'bg-gray-900 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50' %>">
+      Все <span class="ml-1 opacity-70"><%= (c.new||0)+(c.in_progress||0)+(c.completed||0) %></span>
+    </a>
+    <a href="?status=new" class="px-4 py-2 rounded-lg text-sm font-medium transition <%= reqStatus==='new' ? 'bg-blue-600 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50' %>">
+      Новые <span class="ml-1 opacity-70"><%= c.new||0 %></span>
+    </a>
+    <a href="?status=in_progress" class="px-4 py-2 rounded-lg text-sm font-medium transition <%= reqStatus==='in_progress' ? 'bg-yellow-500 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50' %>">
+      В работе <span class="ml-1 opacity-70"><%= c.in_progress||0 %></span>
+    </a>
+    <a href="?status=completed" class="px-4 py-2 rounded-lg text-sm font-medium transition <%= reqStatus==='completed' ? 'bg-green-600 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50' %>">
+      Выполненные <span class="ml-1 opacity-70"><%= c.completed||0 %></span>
+    </a>
+  </div>
+
+  <!-- Поиск -->
+  <form method="get" class="flex gap-2">
+    <input type="hidden" name="status" value="<%= reqStatus %>">
+    <input type="text" name="search" value="<%= reqSearch %>" placeholder="Поиск по клиенту, телефону, комментарию..."
+           class="flex-1 border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+    <button type="submit" class="px-5 py-2 bg-gray-900 text-white rounded-lg text-sm hover:bg-gray-800">Найти</button>
+  </form>
+
+  <!-- Список -->
+  <% if(reqs.length === 0){ %>
+  <div class="bg-white rounded-xl shadow-sm border p-12 text-center">
+    <i data-lucide="inbox" class="w-16 h-16 mx-auto text-gray-300 mb-4"></i>
+    <p class="text-gray-500">Заявок не найдено</p>
+  </div>
+  <% } else { reqs.forEach(function(r){ %>
+  <div class="bg-white rounded-xl shadow-sm border hover:shadow-md transition" id="req-<%= r._id %>">
+    <div class="p-4">
+      <div class="flex items-start gap-4">
+        <div class="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+          <i data-lucide="<%= typeIcons[r.serviceType] || 'wrench' %>" class="w-5 h-5 text-orange-600"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap mb-1">
+            <span class="font-semibold text-gray-900"><%= typeNames[r.serviceType] || r.serviceType %></span>
+            <span class="text-xs px-2 py-0.5 rounded-full font-medium <%= statusColors[r.status] || '' %>"><%= statusNames[r.status] || r.status %></span>
+            <span class="text-xs text-gray-400"><%= fmtDate(r.createdAt) %></span>
+          </div>
+          <!-- Клиент -->
+          <div class="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600 mb-1">
+            <span class="flex items-center gap-1"><i data-lucide="user" class="w-3.5 h-3.5 text-gray-400"></i> <b><%= r.clientName || (r.clientId && r.clientId.name) || '—' %></b></span>
+            <% var phone = r.clientPhone || (r.clientId && r.clientId.phone); if(phone){ %>
+              <a href="tel:<%= phone %>" class="flex items-center gap-1 text-blue-600 hover:underline"><i data-lucide="phone" class="w-3.5 h-3.5"></i> <%= phone %></a>
+            <% } %>
+            <% if(r.clientId && r.clientId.address){ %>
+              <span class="flex items-center gap-1"><i data-lucide="map-pin" class="w-3.5 h-3.5 text-gray-400"></i> <%= r.clientId.address %></span>
+            <% } %>
+          </div>
+          <% if(r.preferredDate){ %><p class="text-xs text-blue-600 font-medium mb-1">Желаемая дата: <%= fmtDate(r.preferredDate) %></p><% } %>
+          <% if(r.comment){ %><p class="text-sm text-gray-500 bg-gray-50 rounded-lg px-3 py-2 mt-1"><%= r.comment %></p><% } %>
+          <% if(r.resolvedComment){ %><p class="text-sm text-green-700 bg-green-50 rounded-lg px-3 py-2 mt-1"><b>Результат:</b> <%= r.resolvedComment %></p><% } %>
+          <% if(r.assignedTo){ %>
+            <p class="text-xs text-gray-500 mt-1">Монтажник: <b><%= r.assignedTo.name || '—' %></b></p>
+          <% } %>
+        </div>
+        <!-- Действия -->
+        <div class="flex flex-col gap-2 flex-shrink-0">
+          <% if(r.status === 'new' || r.status === 'in_progress'){ %>
+          <select onchange="assignRequest('<%= r._id %>', this.value)" class="border rounded-lg px-3 py-1.5 text-sm bg-white">
+            <option value="">Назначить →</option>
+            <% instList.forEach(function(inst){ %>
+              <option value="<%= inst._id %>" <%= (r.assignedTo && String(r.assignedTo._id) === String(inst._id)) ? 'selected' : '' %>><%= inst.name %></option>
+            <% }) %>
+          </select>
+          <% } %>
+          <% if(r.status === 'new'){ %>
+            <button onclick="updateReqStatus('<%= r._id %>', 'cancelled')" class="px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded-lg border">Отменить</button>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+  <% }) } %>
+
+  <!-- Пагинация -->
+  <% if(reqTotalPages > 1){ %>
+  <div class="flex justify-center gap-2 pt-2">
+    <% for(var i = 1; i <= reqTotalPages; i++){ %>
+      <a href="?page=<%= i %>&status=<%= reqStatus %>&search=<%= reqSearch %>" class="px-3 py-1.5 rounded-lg text-sm <%= i === reqPage ? 'bg-blue-600 text-white' : 'bg-white border text-gray-600' %>"><%= i %></a>
+    <% } %>
+  </div>
+  <% } %>
+</div>
+
+<script>
+function assignRequest(id, installerId) {
+  fetch('/admin/requests/' + id + '/assign', {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    body: JSON.stringify({ installerId: installerId })
+  }).then(r => r.json()).then(d => { if(d.success) location.reload(); else alert(d.message); });
+}
+function updateReqStatus(id, status) {
+  if(!confirm('Вы уверены?')) return;
+  fetch('/admin/requests/' + id + '/status', {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    body: JSON.stringify({ status: status })
+  }).then(r => r.json()).then(d => { if(d.success) location.reload(); else alert(d.message); });
+}
+</script>

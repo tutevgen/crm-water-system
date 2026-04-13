@@ -1,0 +1,213 @@
+<%# views/pages/admin/technicians.ejs %>
+<% layout('layouts/default') %>
+<%
+  var insts = typeof installers !== 'undefined' ? installers : [];
+  var f = typeof filters !== 'undefined' ? filters : {};
+  var pg = typeof pagination !== 'undefined' ? pagination : {};
+  var fmtDate = function(d){ return d ? new Date(d).toLocaleDateString('ru-RU') : '—'; };
+  var availNames = { available:'Доступен', busy:'Занят (свой заказ)', vacation:'Отпуск', sick:'Болеет', day_off:'Выходной' };
+  var availColors = { available:'bg-green-100 text-green-700', busy:'bg-yellow-100 text-yellow-700', vacation:'bg-orange-100 text-orange-700', sick:'bg-red-100 text-red-700', day_off:'bg-gray-100 text-gray-600' };
+  var availIcons = { available:'check-circle', busy:'clock', vacation:'palmtree', sick:'thermometer', day_off:'coffee' };
+  var availDots = { available:'bg-green-400', busy:'bg-yellow-400', vacation:'bg-orange-400', sick:'bg-red-400', day_off:'bg-gray-400' };
+%>
+
+<div class="p-4 md:p-6 max-w-6xl mx-auto space-y-5">
+
+  <div class="flex items-center justify-between flex-wrap gap-3">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Монтажники</h1>
+      <p class="text-sm text-gray-500 mt-1">Управление монтажниками и их доступностью</p>
+    </div>
+    <a href="/admin/technicians/create" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 flex items-center gap-2 shadow-sm">
+      <i data-lucide="plus" class="w-4 h-4"></i> Добавить
+    </a>
+  </div>
+
+  <!-- Фильтры -->
+  <div class="bg-white rounded-xl border p-4">
+    <form method="get" class="flex flex-wrap gap-3 items-end">
+      <div class="flex-1 min-w-[180px]">
+        <label class="text-xs text-gray-500 mb-1 block">Поиск</label>
+        <input type="text" name="search" value="<%= f.search || '' %>" placeholder="Имя, телефон, email..." class="w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div>
+        <label class="text-xs text-gray-500 mb-1 block">Статус</label>
+        <select name="status" class="border rounded-lg py-2 px-3 text-sm">
+          <option value="" <%= !f.status ? 'selected' : '' %>>Все</option>
+          <option value="active" <%= f.status==='active' ? 'selected' : '' %>>Активные</option>
+          <option value="inactive" <%= f.status==='inactive' ? 'selected' : '' %>>Неактивные</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs text-gray-500 mb-1 block">Доступность</label>
+        <select name="availability" class="border rounded-lg py-2 px-3 text-sm">
+          <option value="all" <%= f.availability==='all' || !f.availability ? 'selected' : '' %>>Все</option>
+          <option value="available" <%= f.availability==='available' ? 'selected' : '' %>>Доступен</option>
+          <option value="busy" <%= f.availability==='busy' ? 'selected' : '' %>>Занят</option>
+          <option value="vacation" <%= f.availability==='vacation' ? 'selected' : '' %>>Отпуск</option>
+          <option value="sick" <%= f.availability==='sick' ? 'selected' : '' %>>Болеет</option>
+        </select>
+      </div>
+      <button type="submit" class="px-5 py-2 bg-gray-900 text-white rounded-lg text-sm">Найти</button>
+    </form>
+  </div>
+
+  <!-- Сводка -->
+  <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+    <% var countAvail = insts.filter(i => (i.availability||'available')==='available').length;
+       var countBusy = insts.filter(i => i.availability==='busy').length;
+       var countVac = insts.filter(i => i.availability==='vacation').length;
+       var countSick = insts.filter(i => i.availability==='sick').length;
+    %>
+    <div class="bg-white rounded-xl border p-3 text-center"><p class="text-2xl font-bold"><%= pg.total || insts.length %></p><p class="text-xs text-gray-500">Всего</p></div>
+    <div class="bg-green-50 rounded-xl border border-green-200 p-3 text-center"><p class="text-2xl font-bold text-green-700"><%= countAvail %></p><p class="text-xs text-green-600">Доступны</p></div>
+    <div class="bg-yellow-50 rounded-xl border border-yellow-200 p-3 text-center"><p class="text-2xl font-bold text-yellow-700"><%= countBusy %></p><p class="text-xs text-yellow-600">Заняты</p></div>
+    <div class="bg-orange-50 rounded-xl border border-orange-200 p-3 text-center"><p class="text-2xl font-bold text-orange-700"><%= countVac %></p><p class="text-xs text-orange-600">Отпуск</p></div>
+    <div class="bg-red-50 rounded-xl border border-red-200 p-3 text-center"><p class="text-2xl font-bold text-red-700"><%= countSick %></p><p class="text-xs text-red-600">Болеют</p></div>
+  </div>
+
+  <!-- Список -->
+  <% if(insts.length === 0){ %>
+  <div class="bg-white rounded-xl shadow-sm border p-12 text-center">
+    <i data-lucide="users" class="w-16 h-16 mx-auto text-gray-300 mb-4"></i>
+    <p class="text-gray-500">Монтажников не найдено</p>
+  </div>
+  <% } else { insts.forEach(function(inst){
+    var avail = inst.availability || 'available';
+  %>
+  <div class="bg-white rounded-xl shadow-sm border hover:shadow-md transition">
+    <div class="p-4 flex items-center gap-4">
+      <!-- Аватар с индикатором -->
+      <div class="relative flex-shrink-0">
+        <div class="w-14 h-14 rounded-2xl bg-gray-100 overflow-hidden">
+          <% if(inst.avatar){ %><img src="<%= inst.avatar %>" class="w-full h-full object-cover">
+          <% } else { %><div class="w-full h-full flex items-center justify-center text-xl font-bold text-gray-400"><%= inst.name ? inst.name.charAt(0) : '?' %></div><% } %>
+        </div>
+        <span class="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-white <%= availDots[avail] || 'bg-gray-400' %>"></span>
+      </div>
+
+      <!-- Инфо -->
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 flex-wrap">
+          <h3 class="font-bold text-gray-900 text-lg"><%= inst.name %></h3>
+          <span class="text-xs px-2 py-0.5 rounded-full font-medium <%= availColors[avail] || 'bg-gray-100' %>">
+            <%= availNames[avail] || avail %>
+          </span>
+          <% if(!inst.isActive){ %><span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">Деактивирован</span><% } %>
+        </div>
+        <div class="flex flex-wrap gap-x-4 gap-y-0.5 text-sm text-gray-500 mt-1">
+          <% if(inst.phone){ %><a href="tel:<%= inst.phone %>" class="text-blue-600 hover:underline"><%= inst.phone %></a><% } %>
+          <% if(inst.email){ %><span><%= inst.email %></span><% } %>
+          <% if(inst.lastLogin){ %><span>Был: <%= fmtDate(inst.lastLogin) %></span><% } %>
+        </div>
+        <% if(inst.availabilityNote){ %><p class="text-xs text-gray-400 mt-1 italic"><%= inst.availabilityNote %></p><% } %>
+        <% if(inst.availabilityUntil){ %><p class="text-xs text-gray-400">до <%= fmtDate(inst.availabilityUntil) %></p><% } %>
+      </div>
+
+      <!-- Счётчики задач -->
+      <div class="flex gap-2 flex-shrink-0">
+        <div class="text-center px-3 py-2 bg-orange-50 rounded-xl" title="Активные заявки">
+          <p class="text-lg font-bold text-orange-700"><%= inst.activeReqs || 0 %></p>
+          <p class="text-[10px] text-orange-600">Заявки</p>
+        </div>
+        <div class="text-center px-3 py-2 bg-indigo-50 rounded-xl" title="Активные монтажи">
+          <p class="text-lg font-bold text-indigo-700"><%= inst.activeInstalls || 0 %></p>
+          <p class="text-[10px] text-indigo-600">Монтажи</p>
+        </div>
+        <div class="text-center px-3 py-2 bg-green-50 rounded-xl" title="Всего завершено">
+          <p class="text-lg font-bold text-green-700"><%= inst.totalCompleted || 0 %></p>
+          <p class="text-[10px] text-green-600">Всего</p>
+        </div>
+      </div>
+
+      <!-- Кнопки -->
+      <div class="flex flex-col gap-1.5 flex-shrink-0">
+        <button class="avail-btn px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs hover:bg-gray-200 whitespace-nowrap"
+                data-uid="<%= inst._id %>"
+                data-status="<%= avail %>"
+                data-note="<%= (inst.availabilityNote || '').replace(/"/g, '&quot;') %>"
+                data-until="<%= inst.availabilityUntil ? new Date(inst.availabilityUntil).toISOString().split('T')[0] : '' %>">
+          <i data-lucide="<%= availIcons[avail] || 'circle' %>" class="w-3.5 h-3.5 inline"></i> Статус
+        </button>
+        <a href="/admin/technicians/<%= inst._id %>/view" class="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs hover:bg-blue-100 text-center">Подробнее</a>
+        <a href="/admin/technicians/<%= inst._id %>/edit" class="px-3 py-1.5 bg-gray-50 text-gray-600 rounded-lg text-xs hover:bg-gray-100 text-center">Редактировать</a>
+      </div>
+    </div>
+  </div>
+  <% }) } %>
+
+  <!-- Пагинация -->
+  <% if(pg.totalPages > 1){ %>
+  <div class="flex justify-center gap-2 pt-2">
+    <% for(var i = 1; i <= pg.totalPages; i++){ %>
+      <a href="?page=<%= i %>&search=<%= f.search||'' %>&status=<%= f.status||'' %>&availability=<%= f.availability||'' %>" class="px-3 py-1.5 rounded-lg text-sm <%= i === pg.page ? 'bg-blue-600 text-white' : 'bg-white border text-gray-600' %>"><%= i %></a>
+    <% } %>
+  </div>
+  <% } %>
+</div>
+
+<!-- Модалка смены статуса доступности -->
+<div id="availModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+    <div class="p-5 border-b"><h3 class="text-lg font-bold">Изменить доступность</h3></div>
+    <div class="p-5 space-y-4">
+      <input type="hidden" id="availUserId">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">Статус</label>
+        <select id="availStatus" class="w-full border rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500">
+          <option value="available">Доступен</option>
+          <option value="busy">Занят (свой заказ)</option>
+          <option value="vacation">Отпуск</option>
+          <option value="sick">Болеет</option>
+          <option value="day_off">Выходной</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Комментарий</label>
+        <input type="text" id="availNote" class="w-full border rounded-lg px-4 py-2.5 text-sm" placeholder="Причина, детали...">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Недоступен до</label>
+        <input type="date" id="availUntil" class="w-full border rounded-lg px-4 py-2.5 text-sm">
+      </div>
+    </div>
+    <div class="p-5 border-t flex gap-3 justify-end">
+      <button onclick="closeAvailModal()" class="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg text-sm">Отмена</button>
+      <button onclick="saveAvailability()" class="px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Делегирование — кнопки статуса
+document.addEventListener('click', function(e) {
+  var btn = e.target.closest('.avail-btn');
+  if (!btn) return;
+  var uid = btn.dataset.uid;
+  var status = btn.dataset.status || 'available';
+  var note = btn.dataset.note || '';
+  var until = btn.dataset.until || '';
+  document.getElementById('availUserId').value = uid;
+  document.getElementById('availStatus').value = status;
+  document.getElementById('availNote').value = note;
+  document.getElementById('availUntil').value = until;
+  document.getElementById('availModal').classList.remove('hidden');
+});
+
+function closeAvailModal() { document.getElementById('availModal').classList.add('hidden'); }
+
+function saveAvailability() {
+  var userId = document.getElementById('availUserId').value;
+  fetch('/admin/users/' + userId + '/availability', {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    body: JSON.stringify({
+      availability: document.getElementById('availStatus').value,
+      availabilityNote: document.getElementById('availNote').value.trim(),
+      availabilityUntil: document.getElementById('availUntil').value || null
+    })
+  }).then(function(r){ return r.json(); }).then(function(d) {
+    if(d.success) location.reload();
+    else alert(d.message || 'Ошибка');
+  }).catch(function(){ alert('Ошибка сети'); });
+}
+</script>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title><%= title %></title>
+  <link href="/style.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
+  <% if (typeof csrfToken !== 'undefined') { %>
+  <meta name="csrf-token" content="<%= csrfToken %>">
+  <% } %>
+</head>
+<body class="bg-gray-100 text-gray-900 min-h-screen">
+
+  <!-- Шапка -->
+  <%- include('partials/topbar') %>
+
+  <% 
+    const safeUrl = url || '/';
+    const urlParts = safeUrl.split('/').filter(Boolean);
+    const derivedPage = urlParts[urlParts.length - 1] || 'dashboard';
+    const activePage = locals.activePage || derivedPage;
+  %>
+
+  <!-- Боковое меню -->
+  <div class="fixed top-16 left-0 w-64 h-[calc(100vh-4rem)] bg-white border-r border-gray-200 z-30">
+    <%- include('partials/sidebar', { user: user, activePage: activePage }) %>
+  </div>
+
+  <!-- Основной контент -->
+  <div class="ml-64 p-6 min-h-screen bg-gray-100">
+    <%- body %>
+  </div>
+
+  <!-- Lucide Icons -->
+  <script src="/js/lucide.min.js"></script>
+  <script src="/js/init-lucide.js"></script>
+  <script src="/js/alerts.js"></script>
+</body>
+</html>

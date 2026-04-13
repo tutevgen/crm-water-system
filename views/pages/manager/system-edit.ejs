@@ -1,0 +1,36 @@
+
+<% layout('layouts/default') -%>
+
+<div class="max-w-4xl mx-auto space-y-6">
+  <h1 class="text-2xl font-bold">Редактирование системы клиента</h1>
+
+  <form method="POST" action="/manager/system-save" class="space-y-4">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+      <input type="text" name="name" placeholder="Название компонента" class="p-2 border rounded" />
+      <input type="date" name="lastReplaced" class="p-2 border rounded" />
+      <input type="number" name="intervalDays" placeholder="Интервал (дней)" class="p-2 border rounded" />
+      <button class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Добавить</button>
+    </div>
+  </form>
+
+  <table class="w-full text-sm border-t mt-6">
+    <thead>
+      <tr class="text-left">
+        <th class="py-2">Компонент</th>
+        <th class="py-2">Последняя замена</th>
+        <th class="py-2">Интервал</th>
+        <th class="py-2">Следующая</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>BB10</td>
+        <td>2025-04-01</td>
+        <td>30 дней</td>
+        <td>2025-05-01</td>
+        <td><button class="text-red-600 hover:underline text-sm">Удалить</button></td>
+      </tr>
+    </tbody>
+  </table>
+</div>

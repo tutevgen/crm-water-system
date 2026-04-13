@@ -1,0 +1,322 @@
+<%# views/pages/client/settings.ejs %>
+
+<% layout('layouts/default') %>
+
+<%
+  var u = typeof user !== 'undefined' ? user : {};
+  var details = typeof companyDetails !== 'undefined' && companyDetails ? companyDetails : {};
+%>
+
+<div class="p-4 md:p-6 max-w-4xl mx-auto">
+  
+  <!-- Заголовок -->
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Настройки профиля</h1>
+    <p class="text-gray-500 mt-1">Управление личными данными и реквизитами</p>
+  </div>
+
+  <!-- Flash сообщения -->
+  <% if (typeof success !== 'undefined' && success && success.length > 0) { %>
+    <div class="mb-6 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg flex items-center gap-2">
+      <i data-lucide="check-circle" class="w-5 h-5"></i>
+      <%= Array.isArray(success) ? success.join(', ') : success %>
+    </div>
+  <% } %>
+  <% if (typeof error !== 'undefined' && error && error.length > 0) { %>
+    <div class="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-center gap-2">
+      <i data-lucide="alert-circle" class="w-5 h-5"></i>
+      <%= Array.isArray(error) ? error.join(', ') : error %>
+    </div>
+  <% } %>
+
+  <form id="settingsForm" class="space-y-6">
+    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+    
+    <!-- Профиль -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <h2 class="font-semibold text-gray-900 flex items-center gap-2">
+          <i data-lucide="user" class="w-5 h-5 text-blue-500"></i>
+          Личные данные
+        </h2>
+      </div>
+      <div class="p-6 space-y-6">
+        
+        <!-- Аватар -->
+        <div class="flex items-center gap-6">
+          <div class="relative">
+            <img id="avatarPreview" 
+              src="<%= u.avatar ? '/img/avatars/' + u.avatar : '/img/default-avatar.png' %>" 
+              alt="Аватар" 
+              class="w-24 h-24 rounded-full object-cover border-2 border-gray-200 shadow">
+            <label class="absolute bottom-0 right-0 p-2 bg-blue-600 text-white rounded-full cursor-pointer hover:bg-blue-700 shadow-lg">
+              <i data-lucide="camera" class="w-4 h-4"></i>
+              <input type="file" name="avatar" accept="image/*" class="hidden" onchange="previewAvatar(this)">
+            </label>
+          </div>
+          <div>
+            <p class="font-medium text-gray-900">Фото профиля</p>
+            <p class="text-sm text-gray-500">JPG, PNG до 5MB</p>
+          </div>
+        </div>
+        
+        <!-- Основные поля -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">ФИО *</label>
+            <input type="text" name="name" value="<%= u.name || '' %>" required
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input type="email" name="email" value="<%= u.email || '' %>"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Телефон</label>
+            <input type="tel" name="phone" value="<%= u.phone || '' %>"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="+7 (999) 123-45-67">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Тип</label>
+            <select name="clientType" id="clientTypeSelect"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+              <option value="individual" <%= details.clientType === 'individual' || !details.clientType ? 'selected' : '' %>>Физическое лицо</option>
+              <option value="ip" <%= details.clientType === 'ip' ? 'selected' : '' %>>Индивидуальный предприниматель</option>
+              <option value="company" <%= details.clientType === 'company' ? 'selected' : '' %>>Юридическое лицо</option>
+            </select>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+    
+    <!-- Адрес -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <h2 class="font-semibold text-gray-900 flex items-center gap-2">
+          <i data-lucide="map-pin" class="w-5 h-5 text-green-500"></i>
+          Адрес
+        </h2>
+      </div>
+      <div class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Адрес установки системы</label>
+            <input type="text" name="address" value="<%= details.address || '' %>"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="ул. Примерная, д. 1, кв. 100">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Город</label>
+            <input type="text" name="city" value="<%= details.city || '' %>"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Москва">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Регион</label>
+            <input type="text" name="region" value="<%= details.region || '' %>"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Московская область">
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Реквизиты (для ИП и юр.лиц) -->
+    <div id="companySection" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden <%= details.clientType === 'company' || details.clientType === 'ip' ? '' : 'hidden' %>">
+      <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <h2 class="font-semibold text-gray-900 flex items-center gap-2">
+          <i data-lucide="building" class="w-5 h-5 text-purple-500"></i>
+          Реквизиты организации
+        </h2>
+      </div>
+      <div class="p-6 space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Полное наименование</label>
+            <input type="text" name="fullName" value="<%= details.fullName || '' %>"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="ООО «Компания» или ИП Иванов И.И.">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">ИНН</label>
+            <input type="text" name="inn" value="<%= details.inn || '' %>" maxlength="12"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="1234567890">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">КПП</label>
+            <input type="text" name="kpp" value="<%= details.kpp || '' %>" maxlength="9"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="123456789">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">ОГРН / ОГРНИП</label>
+            <input type="text" name="ogrn" value="<%= details.ogrn || '' %>" maxlength="15"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Руководитель</label>
+            <input type="text" name="director" value="<%= details.director || '' %>"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Иванов Иван Иванович">
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Юридический адрес</label>
+            <input type="text" name="legalAddress" value="<%= details.legalAddress || '' %>"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+          </div>
+        </div>
+        
+        <!-- Банковские реквизиты -->
+        <div class="pt-4 border-t border-gray-200">
+          <h3 class="font-medium text-gray-900 mb-4">Банковские реквизиты</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="md:col-span-2">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Наименование банка</label>
+              <input type="text" name="bankName" value="<%= details.bankName || '' %>"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="ПАО Сбербанк">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">БИК</label>
+              <input type="text" name="bik" value="<%= details.bik || '' %>" maxlength="9"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="044525225">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Расчётный счёт</label>
+              <input type="text" name="rs" value="<%= details.rs || '' %>" maxlength="20"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="40702810400000000000">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Корр. счёт</label>
+              <input type="text" name="ks" value="<%= details.ks || '' %>" maxlength="20"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="30101810400000000225">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Смена пароля -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+        <h2 class="font-semibold text-gray-900 flex items-center gap-2">
+          <i data-lucide="lock" class="w-5 h-5 text-red-500"></i>
+          Безопасность
+        </h2>
+        <button type="button" onclick="togglePasswordSection()" class="text-sm text-blue-600 hover:text-blue-800">
+          Сменить пароль
+        </button>
+      </div>
+      <div id="passwordSection" class="p-6 hidden">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Текущий пароль</label>
+            <input type="password" name="currentPassword"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+          </div>
+          <div></div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Новый пароль</label>
+            <input type="password" name="newPassword" minlength="6"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Подтверждение пароля</label>
+            <input type="password" name="confirmPassword"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Кнопка сохранения -->
+    <div class="flex justify-end">
+      <button type="submit" id="saveBtn" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 font-medium">
+        <i data-lucide="save" class="w-5 h-5"></i>
+        Сохранить изменения
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+  
+  var clientTypeSelect = document.getElementById('clientTypeSelect');
+  var companySection = document.getElementById('companySection');
+  var passwordSection = document.getElementById('passwordSection');
+  
+  // Показ/скрытие реквизитов
+  clientTypeSelect.addEventListener('change', function() {
+    if (this.value === 'company' || this.value === 'ip') {
+      companySection.classList.remove('hidden');
+    } else {
+      companySection.classList.add('hidden');
+    }
+  });
+  
+  function togglePasswordSection() {
+    passwordSection.classList.toggle('hidden');
+  }
+  
+  // Превью аватара
+  function previewAvatar(input) {
+    if (input.files && input.files[0]) {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('avatarPreview').src = e.target.result;
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+  
+  // Отправка формы
+  document.getElementById('settingsForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    var formData = new FormData(this);
+    var saveBtn = document.getElementById('saveBtn');
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i data-lucide="loader" class="w-5 h-5 animate-spin"></i> Сохранение...';
+    
+    try {
+      var res = await fetch('/client/settings', {
+        method: 'POST',
+        body: formData
+      });
+      
+      var result = await res.json();
+      
+      if (result.success) {
+        // Показываем уведомление
+        var alert = document.createElement('div');
+        alert.className = 'fixed top-4 right-4 p-4 bg-green-500 text-white rounded-lg shadow-lg z-50';
+        alert.innerHTML = '<div class="flex items-center gap-2"><i data-lucide="check-circle" class="w-5 h-5"></i> Настройки сохранены</div>';
+        document.body.appendChild(alert);
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        setTimeout(function() { alert.remove(); }, 3000);
+        
+        // Обновляем сессию (имя в шапке)
+        if (result.user && result.user.name) {
+          var nameEl = document.querySelector('[data-user-name]');
+          if (nameEl) nameEl.textContent = result.user.name;
+        }
+      } else {
+        alert(result.message || 'Ошибка сохранения');
+      }
+    } catch (err) {
+      alert('Ошибка сети');
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = '<i data-lucide="save" class="w-5 h-5"></i> Сохранить изменения';
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+  });
+</script>

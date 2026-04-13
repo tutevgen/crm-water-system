@@ -1,0 +1,175 @@
+<!-- Модальное окно товара -->
+<div id="productModal" class="fixed inset-0 z-50 hidden">
+  <!-- Overlay -->
+  <div class="absolute inset-0 bg-black/50" id="productModalOverlay"></div>
+  
+  <!-- Modal -->
+  <div class="absolute inset-4 md:inset-10 lg:inset-20 bg-white rounded-xl shadow-2xl flex flex-col overflow-hidden">
+    <!-- Header -->
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+      <h2 class="text-xl font-semibold text-gray-900" id="productModalTitle">Добавить товар</h2>
+      <button type="button" id="closeProductModal" class="p-2 hover:bg-gray-100 rounded-lg transition">
+        <i data-lucide="x" class="w-5 h-5 text-gray-500"></i>
+      </button>
+    </div>
+    
+    <!-- Body -->
+    <form id="productForm" class="flex-1 overflow-y-auto p-6" enctype="multipart/form-data">
+      <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+      <input type="hidden" name="productId" id="productId" value="">
+      
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Левая колонка -->
+        <div class="space-y-4">
+          <!-- Название -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              Название <span class="text-red-500">*</span>
+            </label>
+            <input type="text" name="name" id="productName" required
+                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                   placeholder="Введите название товара">
+          </div>
+          
+          <!-- Категория -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              Категория <span class="text-red-500">*</span>
+            </label>
+            <select name="category" id="productCategory" required
+                    class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400">
+              <option value="">Выберите категорию</option>
+              <% if (typeof categories !== 'undefined' && categories) { %>
+                <% categories.forEach(function(cat) { %>
+                  <option value="<%= cat._id %>"><%= cat.name %></option>
+                <% }); %>
+              <% } %>
+            </select>
+          </div>
+          
+          <!-- Цены -->
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                Цена <span class="text-red-500">*</span>
+              </label>
+              <input type="number" name="price" id="productPrice" required min="0" step="0.01"
+                     class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                     placeholder="0">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Оптовая цена</label>
+              <input type="number" name="wholesalePrice" id="productWholesalePrice" min="0" step="0.01"
+                     class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                     placeholder="0">
+            </div>
+          </div>
+          
+          <!-- Склад и единица -->
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Склад</label>
+              <input type="text" name="warehouse" id="productWarehouse"
+                     class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                     placeholder="Основной">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Единица</label>
+              <select name="unit" id="productUnit"
+                      class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400">
+                <option value="шт">шт</option>
+                <option value="кг">кг</option>
+                <option value="л">л</option>
+                <option value="м">м</option>
+                <option value="м²">м²</option>
+                <option value="м³">м³</option>
+                <option value="комплект">комплект</option>
+                <option value="упаковка">упаковка</option>
+              </select>
+            </div>
+          </div>
+          
+          <!-- Количество и артикул -->
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Количество</label>
+              <input type="number" name="quantity" id="productQuantity" min="0"
+                     class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                     placeholder="0">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Артикул (SKU)</label>
+              <input type="text" name="sku" id="productSku"
+                     class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                     placeholder="Авто">
+            </div>
+          </div>
+          
+          <!-- Видимость -->
+          <div class="flex items-center gap-4 pt-2">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" name="isVisible" id="productIsVisible" checked
+                     class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500">
+              <span class="text-sm text-gray-700">Видим для клиентов</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" name="isFeatured" id="productIsFeatured"
+                     class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500">
+              <span class="text-sm text-gray-700">Рекомендуемый</span>
+            </label>
+          </div>
+        </div>
+        
+        <!-- Правая колонка -->
+        <div class="space-y-4">
+          <!-- Фото -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Фото товара</label>
+            <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition cursor-pointer" id="photoDropZone">
+              <input type="file" name="photo" id="productPhoto" accept="image/*" class="hidden">
+              <div id="photoPreview" class="hidden mb-3">
+                <img src="" alt="Preview" class="max-h-40 mx-auto rounded-lg">
+              </div>
+              <div id="photoPlaceholder">
+                <i data-lucide="image-plus" class="w-10 h-10 mx-auto text-gray-400 mb-2"></i>
+                <p class="text-sm text-gray-500">Нажмите или перетащите изображение</p>
+                <p class="text-xs text-gray-400 mt-1">PNG, JPG до 5MB</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Описание -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Описание</label>
+            <textarea name="description" id="productDescription" rows="4"
+                      class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400 resize-none"
+                      placeholder="Описание товара..."></textarea>
+          </div>
+          
+          <!-- Характеристики -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Характеристики</label>
+            <div id="characteristicsContainer" class="space-y-2">
+              <!-- Динамические поля характеристик -->
+            </div>
+            <button type="button" id="addCharacteristic" 
+                    class="mt-2 text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              Добавить характеристику
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+    
+    <!-- Footer -->
+    <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50">
+      <button type="button" id="cancelProductBtn" class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+        Отмена
+      </button>
+      <button type="submit" form="productForm" id="saveProductBtn" class="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition">
+        Сохранить
+      </button>
+    </div>
+  </div>
+</div>

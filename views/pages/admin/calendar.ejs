@@ -1,0 +1,198 @@
+<%# views/pages/admin/calendar.ejs %>
+<% layout('layouts/default') %>
+<%
+  var evts = typeof events !== 'undefined' ? events : [];
+  var instList = typeof installers !== 'undefined' ? installers : [];
+  var fmtDate = function(d){ return d ? new Date(d).toLocaleDateString('ru-RU') : '—'; };
+  var now = new Date();
+  var month = now.getMonth();
+  var year = now.getFullYear();
+  var monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+  var dayNames = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+  var eventsByDate = {};
+  evts.forEach(function(e){ var d = e.date ? new Date(e.date).toISOString().split('T')[0] : null; if(d){ if(!eventsByDate[d]) eventsByDate[d] = []; eventsByDate[d].push(e); } });
+  var firstDay = new Date(year, month, 1);
+  var lastDay = new Date(year, month + 1, 0);
+  var startDow = (firstDay.getDay() + 6) % 7;
+  var daysInMonth = lastDay.getDate();
+  var today = now.getDate();
+%>
+
+<div class="p-4 md:p-6 max-w-6xl mx-auto space-y-5">
+
+  <div class="flex items-center justify-between flex-wrap gap-3">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Календарь</h1>
+      <p class="text-sm text-gray-500 mt-1"><%= monthNames[month] %> <%= year %></p>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2 text-xs">
+        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-orange-400"></span> Заявки</span>
+        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-indigo-400"></span> Монтажи</span>
+        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-violet-400"></span> Напоминания</span>
+      </div>
+      <button onclick="showAddReminder()" class="px-4 py-2 bg-violet-600 text-white rounded-xl text-sm font-medium hover:bg-violet-700 flex items-center gap-1.5">
+        <i data-lucide="plus" class="w-4 h-4"></i> Напоминание
+      </button>
+    </div>
+  </div>
+
+  <!-- Сетка -->
+  <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+    <div class="grid grid-cols-7 border-b bg-gray-50">
+      <% dayNames.forEach(function(d){ %><div class="text-center text-xs font-medium text-gray-500 py-2.5"><%= d %></div><% }) %>
+    </div>
+    <div class="grid grid-cols-7">
+      <% for(var i = 0; i < startDow; i++){ %><div class="min-h-[100px] border-b border-r p-1.5 bg-gray-50/50"></div><% } %>
+      <% for(var d = 1; d <= daysInMonth; d++){
+        var dateStr = year + '-' + String(month+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+        var dayEvents = eventsByDate[dateStr] || [];
+        var isToday = d === today;
+        var isWeekend = ((startDow + d - 1) % 7) >= 5;
+      %>
+        <div class="min-h-[100px] border-b border-r p-1.5 <%= isWeekend ? 'bg-gray-50/50' : '' %> hover:bg-blue-50/20 transition">
+          <div class="flex items-center justify-between px-0.5 mb-1">
+            <span class="text-sm font-medium <%= isToday ? 'bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center' : isWeekend ? 'text-gray-400' : 'text-gray-700' %>"><%= d %></span>
+            <button onclick="showAddReminder('<%= dateStr %>')" class="opacity-0 hover:opacity-100 focus:opacity-100 w-5 h-5 rounded bg-violet-100 text-violet-600 flex items-center justify-center text-xs" title="Добавить напоминание">+</button>
+          </div>
+          <div class="space-y-0.5">
+            <% dayEvents.slice(0,4).forEach(function(e){
+              var evColor = e.type === 'installation' ? 'bg-indigo-100 text-indigo-700' : e.type === 'reminder' ? 'bg-violet-100 text-violet-700' : 'bg-orange-100 text-orange-700';
+              var evUrl = e.type === 'installation' ? '/admin/proposals/' + e.id : e.type === 'request' ? '/admin/requests' : (e.linkedUrl || '#');
+            %>
+              <a href="<%= evUrl %>" class="block px-1.5 py-0.5 rounded text-[11px] leading-tight truncate hover:opacity-80 cursor-pointer <%= evColor %>"
+                 title="<%= e.title %>&#10;<%= e.clientName || '' %> <%= e.clientPhone || '' %>&#10;<%= e.address || '' %>&#10;Исполнитель: <%= e.assignedTo || '' %>">
+                <%= e.title.substring(0, 20) %><%= e.title.length > 20 ? '…' : '' %>
+              </a>
+            <% }) %>
+            <% if(dayEvents.length > 4){ %><div class="text-[10px] text-gray-400 px-1">+<%= dayEvents.length - 4 %></div><% } %>
+          </div>
+        </div>
+      <% } %>
+      <% var remaining = 7 - ((startDow + daysInMonth) % 7); if(remaining < 7){ for(var i = 0; i < remaining; i++){ %><div class="min-h-[100px] border-b border-r p-1.5 bg-gray-50/50"></div><% }} %>
+    </div>
+  </div>
+
+  <!-- Список событий -->
+  <div class="grid md:grid-cols-3 gap-5">
+    <% [
+      { title: 'Заявки', type: 'request', color: 'orange', icon: 'wrench' },
+      { title: 'Монтажи', type: 'installation', color: 'indigo', icon: 'home' },
+      { title: 'Напоминания', type: 'reminder', color: 'violet', icon: 'bell' }
+    ].forEach(function(sec){
+      var secEvents = evts.filter(function(e){ return e.type === sec.type; });
+    %>
+    <div class="bg-white rounded-xl shadow-sm border">
+      <div class="p-4 border-b flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-<%= sec.color %>-400"></span>
+        <h2 class="font-bold text-gray-900"><%= sec.title %></h2>
+        <span class="ml-auto text-xs text-gray-400"><%= secEvents.length %></span>
+      </div>
+      <div class="divide-y max-h-[350px] overflow-y-auto">
+        <% if(secEvents.length === 0){ %><div class="p-6 text-center text-gray-400 text-sm">Нет</div>
+        <% } else { secEvents.forEach(function(e){
+          var evUrl = e.type === 'installation' ? '/admin/proposals/' + e.id : e.type === 'request' ? '/admin/requests' : (e.linkedUrl || '#');
+        %>
+        <a href="<%= evUrl %>" class="p-3 hover:bg-gray-50 flex items-center gap-3 group block">
+          <div class="w-8 h-8 rounded-lg bg-<%= sec.color %>-50 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="<%= sec.icon %>" class="w-4 h-4 text-<%= sec.color %>-600"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-gray-900 truncate"><%= e.title %></p>
+            <div class="flex gap-2 text-xs text-gray-500">
+              <span><%= fmtDate(e.date) %></span>
+              <% if(e.clientName){ %><span><%= e.clientName %></span><% } %>
+            </div>
+          </div>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-gray-300 group-hover:text-gray-500"></i>
+        </a>
+        <% }) } %>
+      </div>
+    </div>
+    <% }) %>
+  </div>
+</div>
+
+<!-- Модалка добавления напоминания -->
+<div id="reminderModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+    <div class="p-5 border-b flex justify-between items-center">
+      <h3 class="text-lg font-bold">Новое напоминание</h3>
+      <button onclick="closeReminder()" class="text-gray-400 hover:text-gray-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <div class="p-5 space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Название *</label>
+        <input type="text" id="remTitle" class="w-full border rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-violet-500" placeholder="Позвонить клиенту, проверить...">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Описание</label>
+        <textarea id="remDesc" rows="2" class="w-full border rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-violet-500" placeholder="Детали..."></textarea>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Дата *</label>
+          <input type="date" id="remDate" class="w-full border rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-violet-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Время</label>
+          <input type="time" id="remTime" class="w-full border rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-violet-500">
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Приоритет</label>
+          <select id="remPriority" class="w-full border rounded-lg px-3 py-2.5 text-sm">
+            <option value="normal">Обычный</option>
+            <option value="high">Высокий</option>
+            <option value="urgent">Срочный</option>
+            <option value="low">Низкий</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Ссылка (URL)</label>
+          <input type="text" id="remUrl" class="w-full border rounded-lg px-4 py-2.5 text-sm" placeholder="/admin/clients/...">
+        </div>
+      </div>
+    </div>
+    <div class="p-5 border-t flex gap-3 justify-end">
+      <button onclick="closeReminder()" class="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">Отмена</button>
+      <button onclick="saveReminder()" class="px-5 py-2.5 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700">Создать</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function showAddReminder(dateStr) {
+  document.getElementById('remTitle').value = '';
+  document.getElementById('remDesc').value = '';
+  document.getElementById('remDate').value = dateStr || new Date().toISOString().split('T')[0];
+  document.getElementById('remTime').value = '';
+  document.getElementById('remUrl').value = '';
+  document.getElementById('remPriority').value = 'normal';
+  document.getElementById('reminderModal').classList.remove('hidden');
+}
+function closeReminder() { document.getElementById('reminderModal').classList.add('hidden'); }
+
+function saveReminder() {
+  var title = document.getElementById('remTitle').value.trim();
+  var date = document.getElementById('remDate').value;
+  if(!title || !date) { alert('Заполните название и дату'); return; }
+
+  fetch('/admin/reminders', {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    body: JSON.stringify({
+      title: title,
+      description: document.getElementById('remDesc').value.trim(),
+      date: date,
+      time: document.getElementById('remTime').value,
+      priority: document.getElementById('remPriority').value,
+      linkedUrl: document.getElementById('remUrl').value.trim(),
+      linkedType: 'custom'
+    })
+  }).then(r => r.json()).then(d => {
+    if(d.success) location.reload();
+    else alert(d.message || 'Ошибка');
+  });
+}
+</script>

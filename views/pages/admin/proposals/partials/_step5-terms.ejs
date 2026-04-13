@@ -1,0 +1,106 @@
+<div id="step5" class="step-content">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    
+    <!-- Условия -->
+    <div class="bg-white rounded-xl border shadow-sm p-6">
+      <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+        <i data-lucide="file-text" class="w-5 h-5 text-blue-500"></i>
+        Условия
+      </h2>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Условия оплаты</label>
+          <select name="paymentTerms" class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500">
+            <option value="100_prepay">100% предоплата</option>
+            <option value="50_50" selected>50% + 50%</option>
+            <option value="postpay">Оплата по факту</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Срок выполнения</label>
+          <select name="deliveryTime" class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500">
+            <option value="1-2">1-2 дня</option>
+            <option value="3-5" selected>3-5 дней</option>
+            <option value="7-10">7-10 дней</option>
+          </select>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">КП действует</label>
+            <input type="number" name="validDays" value="14" 
+                   class="w-full px-4 py-2.5 border rounded-lg text-center focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Скидка (%)</label>
+            <input type="number" name="discount" id="discountInput" value="0" min="0" max="50"
+                   class="w-full px-4 py-2.5 border rounded-lg text-center focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Гарантии -->
+    <div class="bg-white rounded-xl border shadow-sm p-6">
+      <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+        <i data-lucide="shield-check" class="w-5 h-5 text-blue-500"></i>
+        Гарантии
+      </h2>
+      
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div class="text-center">
+            <label class="block text-sm font-medium text-gray-700 mb-1">На материалы</label>
+            <input type="number" name="warrantyEquipment" value="12" 
+                   class="w-full px-3 py-2.5 border rounded-lg text-center focus:ring-2 focus:ring-blue-500">
+            <span class="text-xs text-gray-500">мес</span>
+          </div>
+          <div class="text-center">
+            <label class="block text-sm font-medium text-gray-700 mb-1">На работы</label>
+            <input type="number" name="warrantyInstallation" value="12" 
+                   class="w-full px-3 py-2.5 border rounded-lg text-center focus:ring-2 focus:ring-blue-500">
+            <span class="text-xs text-gray-500">мес</span>
+          </div>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Примечания</label>
+          <textarea name="notes" rows="3" placeholder="Дополнительная информация..."
+                    class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Итого -->
+    <div class="bg-blue-600 rounded-xl p-6 text-white">
+      <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+        <i data-lucide="calculator" class="w-5 h-5"></i>
+        Итоговая стоимость
+      </h2>
+      
+      <div class="space-y-3">
+        <div class="flex justify-between">
+          <span class="text-blue-100">Материалы:</span>
+          <span id="sumEq" class="font-medium">0 ₽</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-blue-100">Услуги:</span>
+          <span id="sumSv" class="font-medium">0 ₽</span>
+        </div>
+        <div id="discRow" class="flex justify-between hidden">
+          <span class="text-green-200">Скидка:</span>
+          <span id="sumDisc" class="font-medium text-green-200">0 ₽</span>
+        </div>
+        <div class="pt-4 mt-4 border-t border-blue-400">
+          <div class="flex justify-between items-center">
+            <span class="text-lg">ИТОГО:</span>
+            <span id="sumTot" class="text-2xl font-bold">0 ₽</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+</div>

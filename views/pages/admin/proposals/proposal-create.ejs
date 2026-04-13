@@ -1,0 +1,583 @@
+<% layout('layouts/default') %>
+<%
+  var cl   = Array.isArray(clients)    ? clients    : [];
+  var prl  = Array.isArray(products)   ? products   : [];
+  var scl  = Array.isArray(schemes)    ? schemes    : [];
+  var wpl  = Array.isArray(workPhotos) ? workPhotos : [];
+  var cType    = proposalType || 'installation';
+  var isInst   = cType === 'installation';
+  var nSteps   = isInst ? 4 : 3;
+  var csrf     = csrfToken || '';
+  var stepLbls = isInst ? ['Клиент','Анализ','Оборудование','Условия'] : ['Клиент','Услуги','Условия'];
+  var typeLabel= {installation:'Новое КП — Установка',refill:'Новое КП — Перезасыпка',maintenance:'Новое КП — ТО',repair:'Новое КП — Ремонт'}[cType]||'Новое КП';
+  var p={};var anal={};var svc={};var opts=[];var incs=[];
+  var existingPiping='';var existingPipingPrice=0;var payTerms='50_50';var validDays=14;
+  var analysisParams=[
+    {k:'iron',lbl:'Железо (Fe)',u:'мг/л',norm:'0.3',st:'0.01'},
+    {k:'manganese',lbl:'Марганец (Mn)',u:'мг/л',norm:'0.1',st:'0.01'},
+    {k:'hardness',lbl:'Жёсткость',u:'°Ж',norm:'7',st:'0.1'},
+    {k:'ph',lbl:'pH',u:'',norm:'',st:'0.1'},
+    {k:'hydrogen_sulfide',lbl:'Сероводород',u:'мг/л',norm:'0.03',st:'0.001'},
+    {k:'oxidability',lbl:'Окисляемость',u:'мгО₂/л',norm:'5',st:'0.1'},
+    {k:'turbidity',lbl:'Мутность',u:'ЕМФ',norm:'2.6',st:'0.1'},
+    {k:'tds',lbl:'TDS',u:'мг/л',norm:'1000',st:'1'}
+  ];
+  var pipingOptions=[
+    {val:'polypropylene',lbl:'Полипропилен',price:8000},
+    {val:'metal_plastic',lbl:'Металлопластик',price:10000},
+    {val:'stainless',lbl:'Нержавейка',price:15000},
+    {val:'copper',lbl:'Медь',price:18000}
+  ];
+  var svcOptions=[
+    {k:'delivery',lbl:'Доставка',def:3000},
+    {k:'installation',lbl:'Монтаж',def:15000},
+    {k:'chiefInstallation',lbl:'Шеф-монтаж',def:5000},
+    {k:'commissioning',lbl:'Пуско-наладка',def:3000},
+    {k:'materials',lbl:'Расходные материалы',def:2000}
+  ];
+  var recOptions=[
+    {code:'uv_sterilizer',name:'УФ-стерилизатор',desc:'Обеззараживание ультрафиолетом — уничтожает бактерии',price:12500},
+    {code:'leak_protection',name:'Защита от протечек',desc:'Автоматическое отключение при утечке воды',price:8500},
+    {code:'ro_system',name:'Обратный осмос',desc:'Питьевая вода высшего качества',price:18900},
+    {code:'thermal_cover',name:'Термочехол',desc:'Защита оборудования от перепадов температуры',price:4500},
+    {code:'bypass',name:'Байпас',desc:'Обход системы при обслуживании без остановки воды',price:3200}
+  ];
+  var isEdit=false;var formAction='/admin/proposals';
+%>
+<%
+  var ITEM_CATS = ['Аэрация','Обезжелезивание','Умягчение','Механическая очистка','Обратный осмос','УФ-обеззараживание','Другое'];
+  var pItems  = isEdit ? (p.items||[]) : [];
+  var pmItems = isEdit ? (p.premiumItems||[]) : [];
+%>
+
+<style>
+.step-content{display:none}.step-content.active{display:block}
+.step-dot{width:2rem;height:2rem;border-radius:50%;background:#e5e7eb;color:#6b7280;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;cursor:pointer;flex-shrink:0;transition:all .2s}
+.step-dot.active{background:#111827;color:#fff;box-shadow:0 0 0 3px rgba(17,24,39,.2)}
+.step-dot.done{background:#16a34a;color:#fff}
+.step-line{flex:1;height:2px;background:#e5e7eb;margin:0 4px 1.5rem;transition:background .2s}
+.step-line.done{background:#16a34a}
+.analysis-card.exceeded{border-color:#ef4444!important;background:#fef2f2}
+.item-row{break-inside:avoid}
+.client-card{border:1px solid #e5e7eb;border-radius:.75rem;padding:.75rem;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:.75rem}
+.client-card:hover{border-color:#93c5fd;background:#eff6ff}
+.client-card.selected{border-color:#111827;background:#f8fafc}
+.piping-card{border:1px solid #e5e7eb;border-radius:.5rem;padding:.75rem;cursor:pointer;display:flex;align-items:center;gap:.5rem;transition:border-color .15s,background .15s}
+.piping-card:hover{border-color:#93c5fd}
+.piping-card.selected{border-color:#111827;background:#f8fafc}
+</style>
+
+<div class="p-4 md:p-6 max-w-5xl mx-auto">
+
+  <!-- Шапка -->
+  <div class="flex items-center gap-3 mb-6">
+    <a href="/admin/proposals" class="p-2 hover:bg-gray-100 rounded-xl transition-colors">
+      <i data-lucide="arrow-left" class="w-5 h-5 text-gray-600"></i>
+    </a>
+    <div>
+      <h1 class="text-xl font-bold text-gray-900"><%= typeLabel %></h1>
+      <p class="text-xs text-gray-400 mt-0.5">Коммерческое предложение</p>
+    </div>
+  </div>
+
+  <!-- Прогресс -->
+  <div class="flex items-center mb-1">
+    <% for(var si=0;si<nSteps;si++){ %>
+    <div class="step-dot" data-step="<%= si+1 %>"><%= si+1 %></div>
+    <% if(si<nSteps-1){ %><div class="step-line"></div><% } %>
+    <% } %>
+  </div>
+  <div class="flex mb-6">
+    <% stepLbls.forEach(function(lbl,li){ %>
+    <div class="text-center" style="width:<%= 100/nSteps %>%">
+      <span class="step-label text-xs <%= li===0?'text-blue-600 font-medium':'text-gray-400' %>"><%= lbl %></span>
+    </div>
+    <% }); %>
+  </div>
+
+  <form id="proposalForm" action="<%= formAction %>" method="POST" enctype="multipart/form-data">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <input type="hidden" name="proposalType" value="<%= cType %>">
+    <input type="hidden" id="clientDiscountInput" name="clientDiscount" value="<%= p.clientDiscount||0 %>">
+
+
+    <!-- ═══ ШАГ 1: КЛИЕНТ + ОБЪЕКТ ═══ -->
+    <div id="step1" class="step-content active space-y-4">
+
+      <div class="bg-white rounded-2xl border border-gray-200 p-5">
+        <h2 class="font-bold mb-4 text-sm flex items-center gap-2"><i data-lucide="user" class="w-4 h-4 text-gray-500"></i> Клиент</h2>
+
+        <% if(!isEdit){ %>
+        <div class="flex gap-4 mb-4 text-sm">
+          <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="clientType" value="existing" checked> Из базы</label>
+          <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="clientType" value="new"> Новый клиент</label>
+        </div>
+
+        <div id="existingClientSection">
+          <div class="relative mb-3">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            <input id="clientSearch" type="text" placeholder="Поиск по имени или телефону..." class="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-gray-900">
+          </div>
+          <div class="space-y-1.5 max-h-52 overflow-y-auto pr-1">
+            <% if(!cl.length){ %><div class="text-center py-6 text-gray-400 text-sm">Клиентов нет</div>
+            <% }else{ cl.forEach(function(c){ %>
+            <div class="client-card" data-id="<%= c._id %>" data-name="<%= (c.name||'').toLowerCase() %>" data-phone="<%= c.phone||'' %>" data-discount="<%= c.discount||0 %>" data-address="<%= c.address||'' %>">
+              <input type="radio" name="clientId" value="<%= c._id %>" class="flex-shrink-0">
+              <div class="min-w-0 flex-1">
+                <div class="font-medium text-sm truncate"><%= c.name||'Без имени' %></div>
+                <div class="text-xs text-gray-400"><%= c.phone||c.email||'' %></div>
+              </div>
+              <% if(c.discount>0){ %><span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">-<%= c.discount %>%</span><% } %>
+            </div>
+            <% }); } %>
+          </div>
+        </div>
+
+        <div id="newClientSection" class="hidden mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div><label class="block text-xs font-medium mb-1 text-gray-600">Имя *</label><input type="text" name="newClientName" placeholder="Иван Иванов" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"></div>
+          <div><label class="block text-xs font-medium mb-1 text-gray-600">Телефон *</label><input type="tel" name="newClientPhone" placeholder="+7 999..." class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"></div>
+          <div><label class="block text-xs font-medium mb-1 text-gray-600">Email</label><input type="email" name="newClientEmail" placeholder="mail@example.com" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"></div>
+        </div>
+        <% } else { %>
+        <input type="hidden" name="clientType" value="existing">
+        <input type="hidden" name="clientId" value="<%= p.clientId %>">
+        <div class="p-3 bg-gray-50 rounded-xl border border-gray-200 text-sm font-medium"><%= p.clientName||'' %> <span class="text-gray-400 font-normal ml-2"><%= p.clientPhone||'' %></span></div>
+        <% } %>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-gray-200 p-5">
+        <h2 class="font-bold mb-4 text-sm flex items-center gap-2"><i data-lucide="home" class="w-4 h-4 text-gray-500"></i> Объект</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="sm:col-span-2"><label class="block text-xs font-medium mb-1 text-gray-600">Адрес</label>
+            <input id="addressInput" type="text" name="objectAddress" value="<%= p.objectAddress||'' %>" placeholder="г. Рыбинск, ул. Примерная, д. 1" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"></div>
+          <div><label class="block text-xs font-medium mb-1 text-gray-600">Тип объекта</label>
+            <select name="objectType" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white">
+              <% [['house','Частный дом'],['dacha','Дача'],['apartment','Квартира'],['commercial','Коммерческое'],['production','Производство']].forEach(function(o){ %>
+              <option value="<%= o[0] %>" <%= (p.objectType||'house')===o[0]?'selected':'' %>><%= o[1] %></option><% }); %>
+            </select>
+          </div>
+          <div><label class="block text-xs font-medium mb-1 text-gray-600">Источник воды</label>
+            <select name="waterSource" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white">
+              <% [['borehole','Скважина'],['well','Колодец'],['central','Центральное'],['river','Река/озеро']].forEach(function(o){ %>
+              <option value="<%= o[0] %>" <%= (p.waterSource||'borehole')===o[0]?'selected':'' %>><%= o[1] %></option><% }); %>
+            </select>
+          </div>
+          <div><label class="block text-xs font-medium mb-1 text-gray-600">Жильцов</label><input type="number" name="residents" value="<%= p.residents||4 %>" min="1" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"></div>
+          <div><label class="block text-xs font-medium mb-1 text-gray-600">Точек водоразбора</label><input type="number" name="waterPoints" value="<%= p.waterPoints||8 %>" min="1" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"></div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ═══ ШАГ 2: АНАЛИЗ ВОДЫ ═══ -->
+    <% if(isInst){ %>
+    <div id="step2" class="step-content space-y-4">
+      <div class="bg-white rounded-2xl border border-gray-200 p-5">
+        <h2 class="font-bold mb-1 text-sm flex items-center gap-2"><i data-lucide="droplets" class="w-4 h-4 text-gray-500"></i> Анализ воды <span class="text-xs font-normal text-gray-400 ml-1">— необязательно</span></h2>
+        <p class="text-xs text-gray-400 mb-4">Превышение нормы выделяется красным</p>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <% analysisParams.forEach(function(ap){ var av=anal[ap.k]||''; var exceeded=av&&ap.norm&&parseFloat(av)>parseFloat(ap.norm); %>
+          <div class="analysis-card rounded-xl border border-gray-200 p-3 <%= exceeded?'exceeded':'' %>">
+            <label class="block text-xs font-medium text-gray-700 mb-1"><%= ap.lbl %><% if(ap.u){ %> <span class="text-gray-400">, <%= ap.u %></span><% } %></label>
+            <input type="number" name="analysis[<%= ap.k %>]" value="<%= av %>" step="<%= ap.st %>" min="0" <% if(ap.k==='ph'){%>max="14"<%}%> placeholder="0" <%= ap.norm?'data-norm="'+ap.norm+'"':'' %> class="analysis-input w-full px-2 py-1.5 border border-gray-200 rounded-lg text-sm">
+            <% if(ap.norm){ %><div class="text-xs text-gray-400 mt-1">≤ <%= ap.norm %></div><% } %>
+          </div>
+          <% }); %>
+        </div>
+        <div class="mt-4 pt-4 border-t border-gray-100">
+          <label class="block text-xs font-medium text-gray-600 mb-2">Файл анализа (PDF, фото)</label>
+          <input type="file" name="analysisFile" accept=".pdf,image/*" class="text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-gray-100 file:text-gray-700 file:text-sm file:cursor-pointer hover:file:bg-gray-200">
+        </div>
+      </div>
+    </div>
+    <% } %>
+
+
+    <!-- ═══ ШАГ 3: ОБОРУДОВАНИЕ + УСЛУГИ + ОПЦИИ ═══ -->
+    <div id="step<%= isInst?3:2 %>" class="step-content space-y-4">
+
+      <% if(isInst){ %>
+      <!-- ── СТАНДАРТНОЕ ОБОРУДОВАНИЕ ── -->
+      <div class="bg-white rounded-2xl border border-gray-200 p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-bold text-sm flex items-center gap-2"><i data-lucide="package" class="w-4 h-4 text-gray-500"></i> Стандартное оборудование</h2>
+          <div class="flex gap-2">
+            <button type="button" id="openCatalogBtn" class="px-3 py-1.5 text-white rounded-lg text-sm font-medium flex items-center gap-1.5 transition" style="background:#111827">
+              <i data-lucide="search" class="w-3.5 h-3.5"></i> Каталог
+            </button>
+            <button type="button" id="addItemBtn" class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 flex items-center gap-1.5 transition">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Вручную
+            </button>
+          </div>
+        </div>
+
+        <div id="itemsContainer" class="space-y-2">
+          <% pItems.forEach(function(item){ %>
+          <div class="item-row flex items-start gap-2 p-2.5 border border-gray-200 bg-white rounded-xl">
+            <div class="item-num w-7 h-7 rounded-full flex items-center justify-center text-xs font-black text-white flex-shrink-0 mt-1" style="background:#111827">·</div>
+            <div class="eq-img-box w-12 h-12 rounded-lg border border-gray-200 flex items-center justify-center flex-shrink-0 overflow-hidden cursor-pointer" title="Кликните чтобы изменить фото">
+              <% if(item.image){ %><img src="<%= item.image %>" class="w-full h-full object-contain"><% }else{ %><span class="text-gray-300 text-lg">📦</span><% } %>
+            </div>
+            <div class="flex-1 min-w-0 grid grid-cols-1 gap-1.5">
+              <div class="flex gap-1.5">
+                <select name="items[][category]" class="eq-cat w-36 flex-shrink-0 px-2 py-1.5 border border-gray-200 rounded-lg text-xs bg-white">
+                  <option value="">— категория —</option>
+                  <% ITEM_CATS.forEach(function(cat){ %><option value="<%= cat %>" <%= item.category===cat?'selected':'' %>><%= cat %></option><% }); %>
+                </select>
+                <input type="text" name="items[][name]" value="<%= item.name||'' %>" placeholder="Наименование *" required class="item-name flex-1 px-2 py-1.5 border border-gray-200 rounded-lg text-sm">
+              </div>
+              <input type="text" name="items[][description]" value="<%= item.description||'' %>" placeholder="Краткое описание (для КП)" class="eq-desc w-full px-2 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-500">
+            </div>
+            <input type="hidden" name="items[][productId]" value="<%= item.productId||'' %>">
+            <input type="hidden" name="items[][sku]" value="<%= item.sku||'' %>">
+            <input type="hidden" name="items[][image]" class="eq-img-hidden" value="<%= item.image||'' %>">
+            <div class="flex flex-col items-center gap-0.5 flex-shrink-0"><span class="text-xs text-gray-400">Кол-во</span><input type="number" name="items[][quantity]" value="<%= item.quantity||1 %>" min="1" class="item-qty w-14 px-2 py-1.5 border border-gray-200 rounded-lg text-sm text-center"></div>
+            <div class="flex flex-col items-end gap-0.5 flex-shrink-0"><span class="text-xs text-gray-400">Цена ₽</span><input type="number" name="items[][price]" value="<%= item.price||0 %>" min="0" class="item-price w-28 px-2 py-1.5 border border-gray-200 rounded-lg text-sm text-right"></div>
+            <div class="flex flex-col items-end gap-0.5 flex-shrink-0"><span class="text-xs text-gray-400">Сумма</span><div class="item-sum w-28 py-1.5 text-sm font-bold text-right text-gray-800">0 ₽</div></div>
+            <button type="button" class="item-del p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg flex-shrink-0 mt-1"><i data-lucide="x" class="w-4 h-4"></i></button>
+          </div>
+          <% }); %>
+        </div>
+
+        <% if(!pItems.length){ %>
+        <div id="emptyEquipHint" class="py-6 text-center border border-dashed border-gray-200 rounded-xl text-gray-400 text-sm">
+          <i data-lucide="package" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+          Нажмите «Каталог» или «Вручную» чтобы добавить оборудование
+        </div>
+        <% } %>
+
+        <!-- Обвязка -->
+        <div class="mt-5 pt-4 border-t border-gray-100">
+          <h3 class="text-sm font-bold mb-3 text-gray-700">Материал обвязки <span class="font-normal text-gray-400 text-xs">— опционально</span></h3>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <% pipingOptions.forEach(function(m){ var isSel=existingPiping===m.val; %>
+            <div class="piping-card <%= isSel?'selected':'' %>">
+              <input type="radio" name="pipingMaterial" value="<%= m.val %>" data-price="<%= m.price %>" class="sr-only" <%= isSel?'checked':'' %>>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-medium mb-1 pointer-events-none"><%= m.lbl %></div>
+                <div class="flex items-center gap-1">
+                  <input type="number" class="piping-price w-full px-2 py-1 border border-gray-200 rounded-lg text-xs text-right" value="<%= isSel?(existingPipingPrice||m.price):m.price %>" min="0" step="100">
+                  <span class="text-xs text-gray-400 flex-shrink-0">₽</span>
+                </div>
+              </div>
+            </div>
+            <% }); %>
+          </div>
+          <input type="hidden" id="pipingPriceInput" name="pipingPrice" value="<%= existingPipingPrice||0 %>">
+        </div>
+      </div>
+
+      <!-- ── ПРЕМИУМ ОБОРУДОВАНИЕ ── -->
+      <div class="rounded-2xl overflow-hidden border border-gray-200">
+        <div class="px-5 py-3 flex items-center justify-between" style="background:#1f2937">
+          <h2 class="font-bold text-sm flex items-center gap-2 text-white">
+            <i data-lucide="crown" class="w-4 h-4 text-amber-400"></i> Премиум вариант
+            <span class="text-xs font-normal text-gray-400 ml-1">— необязательно</span>
+          </h2>
+          <div class="flex gap-2">
+            <button type="button" id="openPremiumCatalogBtn" class="px-3 py-1.5 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 flex items-center gap-1.5 transition">
+              <i data-lucide="search" class="w-3.5 h-3.5"></i> Каталог
+            </button>
+            <button type="button" id="addPremiumItemBtn" class="px-3 py-1.5 bg-white/10 text-white rounded-lg text-sm font-medium hover:bg-white/20 flex items-center gap-1.5 transition">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Вручную
+            </button>
+          </div>
+        </div>
+
+        <div class="p-5 space-y-4" style="background:#fafafa">
+          <div id="premiumItemsContainer" class="space-y-2">
+            <% pmItems.forEach(function(item){ %>
+            <div class="item-row flex items-start gap-2 p-2.5 border border-amber-200 bg-amber-50/30 rounded-xl">
+              <div class="item-num w-7 h-7 rounded-full flex items-center justify-center text-xs font-black text-white flex-shrink-0 mt-1" style="background:#92400e">·</div>
+              <div class="eq-img-box w-12 h-12 rounded-lg border border-amber-200 flex items-center justify-center flex-shrink-0 overflow-hidden cursor-pointer">
+                <% if(item.image){ %><img src="<%= item.image %>" class="w-full h-full object-contain"><% }else{ %><span class="text-amber-300 text-lg">👑</span><% } %>
+              </div>
+              <div class="flex-1 min-w-0 grid grid-cols-1 gap-1.5">
+                <div class="flex gap-1.5">
+                  <select name="premiumItems[][category]" class="eq-cat w-36 flex-shrink-0 px-2 py-1.5 border border-amber-200 rounded-lg text-xs bg-white">
+                    <option value="">— категория —</option>
+                    <% ITEM_CATS.forEach(function(cat){ %><option value="<%= cat %>" <%= item.category===cat?'selected':'' %>><%= cat %></option><% }); %>
+                  </select>
+                  <input type="text" name="premiumItems[][name]" value="<%= item.name||'' %>" placeholder="Наименование *" class="item-name flex-1 px-2 py-1.5 border border-amber-200 rounded-lg text-sm bg-white">
+                </div>
+                <input type="text" name="premiumItems[][description]" value="<%= item.description||'' %>" placeholder="Краткое описание (для КП)" class="eq-desc w-full px-2 py-1.5 border border-amber-100 rounded-lg text-xs text-gray-500 bg-white">
+              </div>
+              <input type="hidden" name="premiumItems[][productId]" value="<%= item.productId||'' %>">
+              <input type="hidden" name="premiumItems[][image]" class="eq-img-hidden" value="<%= item.image||'' %>">
+              <div class="flex flex-col items-center gap-0.5 flex-shrink-0"><span class="text-xs text-amber-600">Кол-во</span><input type="number" name="premiumItems[][quantity]" value="<%= item.quantity||1 %>" min="1" class="item-qty w-14 px-2 py-1.5 border border-amber-200 rounded-lg text-sm text-center bg-white"></div>
+              <div class="flex flex-col items-end gap-0.5 flex-shrink-0"><span class="text-xs text-amber-600">Цена ₽</span><input type="number" name="premiumItems[][price]" value="<%= item.price||0 %>" min="0" class="item-price w-28 px-2 py-1.5 border border-amber-200 rounded-lg text-sm text-right bg-white"></div>
+              <div class="flex flex-col items-end gap-0.5 flex-shrink-0"><span class="text-xs text-amber-600">Сумма</span><div class="item-sum w-28 py-1.5 text-sm font-bold text-right text-amber-800">0 ₽</div></div>
+              <button type="button" class="item-del p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg flex-shrink-0 mt-1"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <% }); %>
+          </div>
+
+          <% if(!pmItems.length){ %>
+          <div id="emptyPremiumHint" class="py-6 text-center border border-dashed border-amber-200 rounded-xl text-amber-500 text-sm bg-white">
+            <i data-lucide="crown" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+            Добавьте оборудование для Премиум варианта
+          </div>
+          <% } %>
+
+          <!-- Обвязка + монтаж Премиум -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div><label class="block text-xs font-medium mb-1 text-amber-700">Обвязка (Премиум)</label>
+              <select name="premiumPipingMaterial" class="w-full px-3 py-2 border border-amber-200 rounded-xl text-sm bg-white">
+                <option value="">— не выбрано —</option>
+                <% [['polypropylene','Полипропилен'],['metal_plastic','Металлопластик'],['stainless','Нержавейка'],['copper','Медь']].forEach(function(o){ %>
+                <option value="<%= o[0] %>" <%= (p.premiumPipingMaterial||'')===o[0]?'selected':'' %>><%= o[1] %></option><% }); %>
+              </select>
+            </div>
+            <div><label class="block text-xs font-medium mb-1 text-amber-700">Стоимость обвязки</label>
+              <input type="number" name="premiumPipingPrice" value="<%= p.premiumPipingPrice||0 %>" min="0" class="w-full px-3 py-2 border border-amber-200 rounded-xl text-sm bg-white">
+            </div>
+            <div><label class="block text-xs font-medium mb-1 text-amber-700">Монтаж (Премиум)</label>
+              <input type="number" id="premiumServicesTotalInput" name="premiumServicesTotal" value="<%= p.premiumServicesTotal||0 %>" min="0" class="w-full px-3 py-2 border border-amber-200 rounded-xl text-sm bg-white">
+            </div>
+          </div>
+
+          <!-- Итого Премиум -->
+          <div class="flex items-center justify-between px-4 py-3 rounded-xl" style="background:#1f2937">
+            <span class="text-sm font-bold text-gray-300">Итого Премиум вариант:</span>
+            <span id="premiumTotalDisplay" class="text-xl font-black text-white">0 ₽</span>
+          </div>
+
+          <div><label class="block text-xs font-medium mb-1 text-amber-700">Примечание к Премиум</label>
+            <textarea name="premiumNotes" rows="2" placeholder="Чем отличается от стандартного..." class="w-full px-3 py-2 border border-amber-200 rounded-xl text-sm bg-white resize-none"><%= p.premiumNotes||'' %></textarea>
+          </div>
+        </div>
+      </div>
+      <% } %><!-- /isInst -->
+
+      <!-- ── УСЛУГИ ── -->
+      <div class="bg-white rounded-2xl border border-gray-200 p-5">
+        <h2 class="font-bold mb-4 text-sm flex items-center gap-2"><i data-lucide="wrench" class="w-4 h-4 text-gray-500"></i> Услуги</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <% svcOptions.forEach(function(sv){ var isChecked=svc[sv.k]===true||svc[sv.k]==='true'; var price=svc[sv.k+'Price']||sv.def; %>
+          <label class="flex items-center gap-2 p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 text-sm transition">
+            <input type="checkbox" name="services[<%= sv.k %>]" value="true" class="service-cb" <%= isChecked?'checked':'' %>>
+            <span class="flex-1"><%= sv.lbl %></span>
+            <input type="number" name="services[<%= sv.k %>Price]" class="service-price w-24 px-2 py-1 border border-gray-200 rounded-lg text-right text-xs" value="<%= price %>" min="0" step="100">
+            <span class="text-xs text-gray-400">₽</span>
+          </label>
+          <% }); %>
+        </div>
+      </div>
+
+      <!-- ── РЕКОМЕНДУЕМЫЕ ОПЦИИ ── -->
+      <div class="bg-white rounded-2xl border border-gray-200 p-5">
+        <h2 class="font-bold mb-1 text-sm flex items-center gap-2"><i data-lucide="star" class="w-4 h-4 text-amber-500"></i> Рекомендуемые дополнения</h2>
+        <p class="text-xs text-gray-400 mb-4">Не входят в стоимость. Для каждой позиции можно добавить фото.</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <% var selCodes=opts.map(function(o){return o.code;}); %>
+          <% recOptions.forEach(function(ro){ var isChk=selCodes.indexOf(ro.code)>-1; %>
+          <label class="flex items-start gap-3 p-3 border border-gray-200 rounded-xl cursor-pointer hover:border-amber-300 hover:bg-amber-50/50 transition">
+            <input type="checkbox" name="recommendedOptions[]" value="<%= ro.code %>" class="mt-0.5 flex-shrink-0" <%= isChk?'checked':'' %>>
+            <div class="min-w-0 flex-1">
+              <div class="font-semibold text-sm text-gray-900"><%= ro.name %></div>
+              <div class="text-xs text-gray-500 mt-0.5 leading-tight"><%= ro.desc %></div>
+              <div class="text-blue-600 font-bold text-xs mt-1.5"><%= ro.price.toLocaleString('ru-RU') %> ₽</div>
+            </div>
+            <!-- Поле для ссылки на фото опции -->
+            <div class="flex flex-col items-end gap-1">
+              <% var existOpt=opts.find(function(o){return o.code===ro.code;}); %>
+              <% if(existOpt&&existOpt.image){ %>
+              <img src="<%= existOpt.image %>" class="w-10 h-10 object-cover rounded-lg border border-gray-200">
+              <% } else { %>
+              <div class="w-10 h-10 rounded-lg border border-dashed border-gray-200 flex items-center justify-center text-gray-300 text-base">📷</div>
+              <% } %>
+              <input type="text" name="optionImage[<%= ro.code %>]" value="<%= existOpt&&existOpt.image||'' %>" placeholder="URL фото" class="w-24 text-xs px-1.5 py-1 border border-gray-200 rounded text-gray-500">
+            </div>
+          </label>
+          <% }); %>
+        </div>
+      </div>
+
+      <!-- Мини-итого -->
+      <div class="bg-gray-50 border border-gray-200 rounded-2xl p-4">
+        <div class="grid gap-3 text-sm" style="grid-template-columns:repeat(<%= isInst?4:2 %>,1fr)">
+          <% if(isInst){ %>
+          <div><div class="text-xs text-gray-400 mb-0.5 font-medium uppercase tracking-wide">Оборудование</div><div id="equipmentTotal" class="font-black text-gray-900">0 ₽</div></div>
+          <div><div class="text-xs text-gray-400 mb-0.5 font-medium uppercase tracking-wide">Обвязка</div><div id="pipingTotal" class="font-black text-gray-900">0 ₽</div></div>
+          <% } %>
+          <div><div class="text-xs text-gray-400 mb-0.5 font-medium uppercase tracking-wide">Услуги</div><div id="servicesTotal" class="font-black text-gray-900">0 ₽</div></div>
+          <div><div class="text-xs text-gray-400 mb-0.5 font-medium uppercase tracking-wide">Промежуточно</div><div id="subtotal" class="font-black text-gray-900">0 ₽</div></div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ═══ ШАГ 4: УСЛОВИЯ ═══ -->
+    <div id="step<%= isInst?4:3 %>" class="step-content">
+      <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
+
+        <div class="lg:col-span-3 space-y-4">
+          <div class="bg-white rounded-2xl border border-gray-200 p-5">
+            <h3 class="font-bold mb-3 text-sm flex items-center gap-2"><i data-lucide="credit-card" class="w-4 h-4 text-gray-500"></i> Условия оплаты</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <% [['50_50','50% / 50%','аванс + после монтажа'],['100_prepay','100% предоплата','полная оплата'],['30_70','30% / 70%','аванс + монтаж'],['postpay','Постоплата','по факту'],['installment','Рассрочка','через банк']].forEach(function(pt){ %>
+              <label class="flex items-center gap-2 p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 text-sm transition">
+                <input type="radio" name="paymentTerms" value="<%= pt[0] %>" <%= payTerms===pt[0]?'checked':'' %>>
+                <div><div class="font-medium"><%= pt[1] %></div><div class="text-xs text-gray-400"><%= pt[2] %></div></div>
+              </label>
+              <% }); %>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-2xl border border-gray-200 p-5">
+            <h3 class="font-bold mb-3 text-sm flex items-center gap-2"><i data-lucide="clock" class="w-4 h-4 text-gray-500"></i> Сроки и гарантии</h3>
+            <div class="grid grid-cols-2 gap-3">
+              <div><label class="block text-xs text-gray-500 mb-1">Доставка</label>
+                <select name="deliveryTime" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white">
+                  <% [['1-2','1–2 дня'],['3-5','3–5 дней'],['7-10','7–10 дней']].forEach(function(o){ %><option value="<%= o[0] %>" <%= (p.deliveryTime||'3-5')===o[0]?'selected':'' %>><%= o[1] %></option><% }); %>
+                </select>
+              </div>
+              <div><label class="block text-xs text-gray-500 mb-1">Монтаж</label>
+                <select name="installationTime" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white">
+                  <% [['1','1 день'],['2','1–2 дня'],['3','2–3 дня']].forEach(function(o){ %><option value="<%= o[0] %>" <%= (p.installationTime||'1')===o[0]?'selected':'' %>><%= o[1] %></option><% }); %>
+                </select>
+              </div>
+              <div><label class="block text-xs text-gray-500 mb-1">Гарантия на оборудование</label>
+                <div class="flex gap-1 items-center"><input type="number" name="warrantyEquipment" value="<%= p.warrantyEquipment||24 %>" min="0" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"><span class="text-xs text-gray-400 flex-shrink-0">мес.</span></div>
+              </div>
+              <div><label class="block text-xs text-gray-500 mb-1">Гарантия на монтаж</label>
+                <div class="flex gap-1 items-center"><input type="number" name="warrantyInstallation" value="<%= p.warrantyInstallation||24 %>" min="0" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"><span class="text-xs text-gray-400 flex-shrink-0">мес.</span></div>
+              </div>
+            </div>
+          </div>
+
+          <% if(isInst){ %>
+          <div class="bg-white rounded-2xl border border-gray-200 p-5">
+            <h3 class="font-bold mb-3 text-sm flex items-center gap-2"><i data-lucide="image" class="w-4 h-4 text-gray-500"></i> Схема и фото работ</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <p class="text-xs text-gray-500 mb-2">Технологическая схема</p>
+                <label class="border-2 border-dashed border-gray-200 rounded-xl p-4 text-center cursor-pointer hover:border-gray-400 hover:bg-gray-50 block transition">
+                  <i data-lucide="upload" class="w-6 h-6 mx-auto mb-1 text-gray-400"></i>
+                  <span class="text-xs text-gray-400">PNG, JPG до 5MB</span>
+                  <input type="file" id="schemaInput" name="schemaImageUpload" accept="image/*" class="hidden">
+                </label>
+                <div id="schemaPreview" class="mt-2 <%= p.schemaImage?'':'hidden' %>">
+                  <img id="schemaImg" src="<%= p.schemaImage||'' %>" class="rounded-lg max-h-32 mx-auto block border border-gray-200">
+                </div>
+                <input type="hidden" id="schemaImageHidden" name="schemaImage" value="<%= p.schemaImage||'' %>">
+                <% if(scl.length>0){ %><div class="mt-2"><div class="text-xs text-gray-400 mb-1">Из галереи:</div><div class="grid grid-cols-4 gap-1"><% scl.slice(0,8).forEach(function(src){ %><div class="scheme-thumb rounded-lg cursor-pointer border-2 border-transparent overflow-hidden" data-src="<%= src %>" style="<%= p.schemaImage===src?'border-color:#111827':'' %>"><img src="<%= src %>" class="w-full h-10 object-cover"></div><% }); %></div></div><% } %>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500 mb-2">Фото работ (до 5)</p>
+                <label class="border-2 border-dashed border-gray-200 rounded-xl p-4 text-center cursor-pointer hover:border-gray-400 hover:bg-gray-50 block transition">
+                  <i data-lucide="images" class="w-6 h-6 mx-auto mb-1 text-gray-400"></i>
+                  <span class="text-xs text-gray-400">Несколько фото</span>
+                  <input type="file" id="workPhotosInput" name="workPhotosUpload" accept="image/*" multiple class="hidden">
+                </label>
+                <div id="workPhotosPreview" class="mt-2 flex flex-wrap gap-1">
+                  <% (p.workPhotos||[]).forEach(function(src){ %><img src="<%= src %>" class="w-14 h-14 object-cover rounded-lg border border-gray-200"><% }); %>
+                </div>
+                <% if(wpl.length>0){ %><div class="mt-2"><div class="text-xs text-gray-400 mb-1">Из галереи:</div><div class="grid grid-cols-4 gap-1"><% wpl.slice(0,8).forEach(function(src){ var isSel=(p.workPhotos||[]).includes(src); %><div class="photo-thumb rounded-lg cursor-pointer border-2 overflow-hidden" style="border-color:<%= isSel?'#111827':'transparent' %>" data-src="<%= src %>"><img src="<%= src %>" class="w-full h-10 object-cover"></div><% }); %></div></div><% } %>
+              </div>
+            </div>
+          </div>
+          <% } %>
+
+          <div class="bg-white rounded-2xl border border-gray-200 p-5">
+            <label class="block text-sm font-bold mb-2">Примечания для клиента</label>
+            <textarea name="notes" rows="3" placeholder="Особые условия, акции..." class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm resize-none"><%= p.notes||'' %></textarea>
+          </div>
+        </div>
+
+        <div class="lg:col-span-2 space-y-4">
+          <div class="bg-white rounded-2xl border border-gray-200 p-5 space-y-3">
+            <div><label class="block text-xs text-gray-500 mb-1">КП действителен (дней)</label><input type="number" name="validDays" value="<%= validDays %>" min="1" max="90" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"></div>
+            <div><label class="block text-xs text-gray-500 mb-1">Скидка менеджера (%)</label><input type="number" id="discountInput" name="discount" value="<%= p.discount||0 %>" min="0" max="50" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"></div>
+          </div>
+
+          <!-- Итог -->
+          <div class="rounded-2xl overflow-hidden" style="background:#111827">
+            <div class="p-5">
+              <div class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">Итоговая стоимость</div>
+              <div class="space-y-2 text-sm">
+                <% if(isInst){ %>
+                <div class="flex justify-between" style="color:#9ca3af"><span>Оборудование:</span><span id="sumEq" class="font-medium">0 ₽</span></div>
+                <div class="flex justify-between" style="color:#9ca3af"><span>Обвязка:</span><span id="sumPip" class="font-medium">0 ₽</span></div>
+                <% } %>
+                <div class="flex justify-between" style="color:#9ca3af"><span>Услуги:</span><span id="sumSv" class="font-medium">0 ₽</span></div>
+                <div id="clientDiscountRow" class="flex justify-between hidden" style="color:#6ee7b7"><span>Скидка клиента:</span><span id="clientDiscountAmount" class="font-medium">-0 ₽</span></div>
+                <div id="discRow" class="flex justify-between hidden" style="color:#6ee7b7"><span>Скидка менеджера:</span><span id="discountAmount" class="font-medium">-0 ₽</span></div>
+                <div class="border-t border-gray-700 pt-3 flex justify-between items-center">
+                  <span class="font-bold text-gray-200 text-sm uppercase tracking-wide">Итого:</span>
+                  <span id="sumTot" class="text-2xl font-black text-white">0 ₽</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-2xl border border-gray-200 p-5">
+            <h3 class="text-sm font-bold mb-3">Включено в стоимость</h3>
+            <div class="space-y-2">
+              <% var inclOpts=[{val:'delivery',lbl:'Бесплатная доставка'},{val:'analysis',lbl:'Анализ воды после установки'},{val:'consumables',lbl:'Расходники на 1 месяц'},{val:'first_service',lbl:'Первое ТО бесплатно'},{val:'training',lbl:'Обучение эксплуатации'}];
+              var curIncs=p.includes||[]; %>
+              <% inclOpts.forEach(function(inc){ var isChk=curIncs.indexOf(inc.val)>-1||(inc.val==='analysis'&&!isEdit); %>
+              <label class="flex items-center gap-2 text-sm cursor-pointer">
+                <input type="checkbox" name="includes[]" value="<%= inc.val %>" <%= isChk?'checked':'' %>>
+                <span class="text-gray-700"><%= inc.lbl %></span>
+              </label>
+              <% }); %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Навигация -->
+    <div class="mt-6 flex items-center justify-between">
+      <button type="button" id="btnPrev" class="hidden px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 font-medium flex items-center gap-2">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i> Назад
+      </button>
+      <div class="flex-1"></div>
+      <button type="button" id="btnNext" class="px-5 py-2.5 text-white rounded-xl font-medium flex items-center gap-2" style="background:#111827">
+        Далее <i data-lucide="arrow-right" class="w-4 h-4"></i>
+      </button>
+      <button type="button" id="btnSubmit" class="hidden px-6 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 font-medium flex items-center gap-2">
+        <i data-lucide="check" class="w-4 h-4"></i> <%= isEdit?'Сохранить КП':'Создать КП' %>
+      </button>
+    </div>
+  </form>
+
+
+  <!-- Каталог -->
+  <div id="catalogModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col">
+      <div class="p-4 border-b flex items-center gap-3">
+        <i data-lucide="package" class="w-5 h-5 text-gray-500"></i>
+        <h3 id="catalogTitle" class="font-bold flex-1 text-gray-900">Каталог товаров</h3>
+        <button id="closeCatalogBtn" class="p-1.5 hover:bg-gray-100 rounded-lg"><i data-lucide="x" class="w-4 h-4 text-gray-500"></i></button>
+      </div>
+      <div class="p-4 border-b">
+        <div class="relative">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+          <input type="text" id="catalogSearch" placeholder="Поиск по названию или артикулу..." class="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-gray-900">
+        </div>
+      </div>
+      <div class="flex-1 overflow-y-auto p-4">
+        <div id="catalogGrid" class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="col-span-4 text-center py-10 text-gray-400 text-sm">Загрузка каталога...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="application/json" id="pdata"><%= JSON.stringify(prl||[]) %></script>
+<script>
+window._proposalCfg = {
+  totalSteps: <%= nSteps %>,
+  isInstall:  <%= isInst %>,
+  editMode:   <%= isEdit %>,
+  clientDiscount: <%= p.clientDiscount||0 %>,
+  pipingPrice:    <%= p.pipingMaterialPrice||0 %>,
+  selectedPhotos: <%= JSON.stringify(p.workPhotos||[]) %>,
+  products: (function(){ try{ return JSON.parse(document.getElementById('pdata').textContent||'[]'); }catch(e){ return []; } })()
+};
+</script>
+<script src="/js/admin/proposal-form.js?v=<%= Date.now() %>"></script>

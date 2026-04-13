@@ -1,0 +1,229 @@
+<%# views/pages/client/store.ejs %>
+<% layout('layouts/default') %>
+<%
+  var prods = typeof products !== 'undefined' ? products : [];
+  var cats = typeof categories !== 'undefined' ? categories : [];
+  var disc = typeof userDiscount !== 'undefined' ? userDiscount : 0;
+  var fmt = function(n){ return (Number(n)||0).toLocaleString('ru-RU'); };
+  var discountedPrice = function(p){ return disc > 0 ? Math.round(p * (1 - disc/100)) : p; };
+%>
+
+<div class="p-4 md:p-6 max-w-7xl mx-auto space-y-5">
+
+  <!-- Заголовок -->
+  <div class="flex items-center justify-between flex-wrap gap-3">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Магазин расходных материалов</h1>
+      <p class="text-sm text-gray-500 mt-1">Картриджи, соль, мембраны и комплектующие</p>
+    </div>
+    <button onclick="openCart()" class="relative px-5 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 flex items-center gap-2 font-medium shadow-sm">
+      <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+      Корзина
+      <span id="cartBadge" class="hidden absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">0</span>
+    </button>
+  </div>
+
+  <% if(disc > 0){ %>
+  <div class="bg-green-50 border border-green-200 rounded-xl px-4 py-3 flex items-center gap-3">
+    <i data-lucide="badge-percent" class="w-5 h-5 text-green-600"></i>
+    <span class="text-green-800 text-sm font-medium">Ваша персональная скидка — <b><%= disc %>%</b> на все товары</span>
+  </div>
+  <% } %>
+
+  <!-- Фильтры -->
+  <div class="bg-white rounded-xl shadow-sm border p-4">
+    <form method="get" class="flex flex-wrap gap-3 items-end">
+      <div class="flex-1 min-w-[200px]">
+        <label class="text-xs text-gray-500 mb-1 block">Поиск</label>
+        <div class="relative">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+          <input type="text" name="search" value="<%= search %>" placeholder="Название или описание..." class="w-full pl-10 pr-4 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        </div>
+      </div>
+      <div class="min-w-[160px]">
+        <label class="text-xs text-gray-500 mb-1 block">Категория</label>
+        <select name="category" class="w-full border rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-blue-500">
+          <option value="">Все категории</option>
+          <% cats.forEach(function(c){ %>
+            <option value="<%= c._id %>" <%= category === String(c._id) ? 'selected' : '' %>><%= c.name %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="min-w-[140px]">
+        <label class="text-xs text-gray-500 mb-1 block">Сортировка</label>
+        <select name="sort" class="w-full border rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-blue-500">
+          <option value="" <%= !sort ? 'selected' : '' %>>Популярные</option>
+          <option value="price_asc" <%= sort==='price_asc' ? 'selected' : '' %>>Дешевле</option>
+          <option value="price_desc" <%= sort==='price_desc' ? 'selected' : '' %>>Дороже</option>
+          <option value="name" <%= sort==='name' ? 'selected' : '' %>>По названию</option>
+          <option value="newest" <%= sort==='newest' ? 'selected' : '' %>>Новинки</option>
+        </select>
+      </div>
+      <button type="submit" class="px-5 py-2 bg-gray-900 text-white rounded-lg text-sm hover:bg-gray-800">Найти</button>
+      <% if(search || category || sort){ %>
+        <a href="/client/store" class="px-4 py-2 text-gray-600 hover:text-gray-900 text-sm">Сбросить</a>
+      <% } %>
+    </form>
+  </div>
+
+  <!-- Товары -->
+  <% if(prods.length === 0){ %>
+  <div class="bg-white rounded-xl shadow-sm border p-12 text-center">
+    <i data-lucide="package-open" class="w-16 h-16 mx-auto text-gray-300 mb-4"></i>
+    <h2 class="text-lg font-semibold text-gray-600">Товары не найдены</h2>
+    <p class="text-sm text-gray-400 mt-1">Попробуйте изменить параметры поиска</p>
+  </div>
+  <% } else { %>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    <% prods.forEach(function(p){ %>
+    <div class="bg-white rounded-xl shadow-sm border hover:shadow-md transition group flex flex-col">
+      <!-- Фото -->
+      <div class="relative h-48 bg-gray-50 rounded-t-xl overflow-hidden">
+        <% if(p.photo){ %>
+          <img src="<%= p.photo %>" alt="<%= p.name %>" class="w-full h-full object-contain p-3 group-hover:scale-105 transition">
+        <% } else { %>
+          <div class="w-full h-full flex items-center justify-center text-gray-300">
+            <i data-lucide="package" class="w-16 h-16"></i>
+          </div>
+        <% } %>
+        <% if(disc > 0){ %>
+          <div class="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">-<%= disc %>%</div>
+        <% } %>
+      </div>
+      <!-- Инфо -->
+      <div class="p-4 flex flex-col flex-1">
+        <% if(p.category){ %>
+          <span class="text-xs text-blue-600 font-medium mb-1"><%= p.category.name %></span>
+        <% } %>
+        <h3 class="font-semibold text-gray-900 text-sm leading-tight mb-2 line-clamp-2"><%= p.name %></h3>
+        <% if(p.sku){ %>
+          <span class="text-xs text-gray-400 mb-2">Арт: <%= p.sku %></span>
+        <% } %>
+        <div class="mt-auto pt-3 border-t">
+          <div class="flex items-baseline gap-2 mb-3">
+            <% if(disc > 0){ %>
+              <span class="text-lg font-bold text-gray-900"><%= fmt(discountedPrice(p.price)) %> ₽</span>
+              <span class="text-sm text-gray-400 line-through"><%= fmt(p.price) %> ₽</span>
+            <% } else { %>
+              <span class="text-lg font-bold text-gray-900"><%= fmt(p.price) %> ₽</span>
+            <% } %>
+          </div>
+          <button onclick="addToCart('<%= p._id %>', '<%= (p.name||'').replace(/'/g, "\\'") %>', <%= discountedPrice(p.price) %>, '<%= p.photo || '' %>')"
+                  class="w-full py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition flex items-center justify-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i> В корзину
+          </button>
+        </div>
+      </div>
+    </div>
+    <% }) %>
+  </div>
+
+  <!-- Пагинация -->
+  <% if(totalPages > 1){ %>
+  <div class="flex justify-center gap-2 pt-4">
+    <% for(var i = 1; i <= totalPages; i++){ %>
+      <a href="?page=<%= i %><%= search ? '&search='+search : '' %><%= category ? '&category='+category : '' %><%= sort ? '&sort='+sort : '' %>"
+         class="px-3 py-1.5 rounded-lg text-sm <%= i === page ? 'bg-blue-600 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50' %>">
+        <%= i %>
+      </a>
+    <% } %>
+  </div>
+  <% } %>
+  <% } %>
+</div>
+
+<!-- Модалка корзины -->
+<div id="cartModal" class="fixed inset-0 bg-black/50 z-50 hidden">
+  <div class="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl flex flex-col">
+    <div class="p-4 border-b flex items-center justify-between">
+      <h2 class="text-lg font-bold">Корзина</h2>
+      <button onclick="closeCart()" class="text-gray-400 hover:text-gray-600"><i data-lucide="x" class="w-6 h-6"></i></button>
+    </div>
+    <div id="cartItems" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+    <div class="border-t p-4 space-y-3">
+      <div class="flex justify-between text-lg font-bold">
+        <span>Итого:</span>
+        <span id="cartTotal">0 ₽</span>
+      </div>
+      <button id="cartCheckout" onclick="submitOrder()" class="w-full py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition hidden">
+        Оформить заказ
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Корзина в памяти (не localStorage — запрещён в артефактах, но тут EJS-страница)
+var cart = JSON.parse(localStorage.getItem('nf_cart') || '[]');
+
+function updateCartBadge() {
+  var count = cart.reduce(function(s,i){ return s + i.qty; }, 0);
+  var badge = document.getElementById('cartBadge');
+  if (count > 0) { badge.textContent = count; badge.classList.remove('hidden'); }
+  else { badge.classList.add('hidden'); }
+}
+
+function addToCart(id, name, price, photo) {
+  var existing = cart.find(function(i){ return i.id === id; });
+  if (existing) { existing.qty++; } else { cart.push({ id: id, name: name, price: price, photo: photo, qty: 1 }); }
+  localStorage.setItem('nf_cart', JSON.stringify(cart));
+  updateCartBadge();
+  // Анимация
+  var btn = event.target.closest('button');
+  btn.textContent = '✓ Добавлено';
+  btn.classList.replace('bg-blue-600', 'bg-green-600');
+  setTimeout(function(){
+    btn.innerHTML = '<i data-lucide="plus" class="w-4 h-4"></i> В корзину';
+    btn.classList.replace('bg-green-600', 'bg-blue-600');
+    if(window.lucide) lucide.createIcons();
+  }, 1000);
+}
+
+function openCart() {
+  document.getElementById('cartModal').classList.remove('hidden');
+  renderCart();
+}
+function closeCart() { document.getElementById('cartModal').classList.add('hidden'); }
+
+function renderCart() {
+  var c = document.getElementById('cartItems');
+  var total = 0;
+  if (cart.length === 0) {
+    c.innerHTML = '<div class="text-center text-gray-400 py-12"><p class="text-lg">Корзина пуста</p></div>';
+    document.getElementById('cartCheckout').classList.add('hidden');
+  } else {
+    var html = '';
+    cart.forEach(function(item, idx){
+      total += item.price * item.qty;
+      html += '<div class="flex gap-3 bg-gray-50 rounded-xl p-3">' +
+        (item.photo ? '<img src="' + item.photo + '" class="w-16 h-16 object-contain rounded-lg bg-white flex-shrink-0">' : '') +
+        '<div class="flex-1 min-w-0"><p class="text-sm font-medium text-gray-900 truncate">' + item.name + '</p>' +
+        '<p class="text-sm text-gray-500 mt-1">' + Number(item.price).toLocaleString('ru-RU') + ' ₽</p>' +
+        '<div class="flex items-center gap-2 mt-2">' +
+        '<button onclick="changeQty('+idx+',-1)" class="w-7 h-7 bg-white border rounded flex items-center justify-center text-gray-600 hover:bg-gray-100">−</button>' +
+        '<span class="text-sm font-medium w-6 text-center">' + item.qty + '</span>' +
+        '<button onclick="changeQty('+idx+',1)" class="w-7 h-7 bg-white border rounded flex items-center justify-center text-gray-600 hover:bg-gray-100">+</button>' +
+        '<button onclick="removeFromCart('+idx+')" class="ml-auto text-red-400 hover:text-red-600 text-xs">Удалить</button>' +
+        '</div></div></div>';
+    });
+    c.innerHTML = html;
+    document.getElementById('cartCheckout').classList.remove('hidden');
+  }
+  document.getElementById('cartTotal').textContent = Number(total).toLocaleString('ru-RU') + ' ₽';
+}
+
+function changeQty(idx, delta) {
+  cart[idx].qty += delta;
+  if (cart[idx].qty < 1) cart.splice(idx, 1);
+  localStorage.setItem('nf_cart', JSON.stringify(cart));
+  updateCartBadge(); renderCart();
+}
+function removeFromCart(idx) { cart.splice(idx, 1); localStorage.setItem('nf_cart', JSON.stringify(cart)); updateCartBadge(); renderCart(); }
+
+function submitOrder() {
+  alert('Заказ будет отправлен менеджеру. Функция в разработке.');
+}
+
+// Init
+updateCartBadge();
+</script>

@@ -1,0 +1,19 @@
+<div class="mb-8">
+  <div class="flex items-center justify-between">
+    <% for (let i = 1; i <= totalSteps; i++) { %>
+      <div class="step-item flex flex-col items-center cursor-pointer" data-step="<%= i %>">
+        <div class="step-circle w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm transition-all
+                    <%= i === 1 ? 'bg-blue-600 text-white ring-4 ring-blue-100' : 'bg-gray-200 text-gray-600' %>">
+          <%= i %>
+        </div>
+        <span class="step-label text-xs mt-2 <%= i === 1 ? 'text-blue-600 font-medium' : 'text-gray-500' %>">
+          <%= stepLabels[i-1] %>
+        </span>
+      </div>
+      
+      <% if (i < totalSteps) { %>
+        <div class="step-line flex-1 h-0.5 bg-gray-200 mx-2 mb-5"></div>
+      <% } %>
+    <% } %>
+  </div>
+</div>

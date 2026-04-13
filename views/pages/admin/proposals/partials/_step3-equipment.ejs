@@ -1,0 +1,198 @@
+<div id="step3" class="step-content">
+  <div class="bg-white rounded-xl border shadow-sm p-6">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-lg font-semibold flex items-center gap-2">
+        <i data-lucide="package" class="w-5 h-5 text-blue-500"></i>
+        Оборудование
+      </h2>
+      <div class="flex gap-2">
+        <button type="button" id="openCatalogBtn" 
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
+          <i data-lucide="search" class="w-4 h-4"></i>
+          Каталог товаров
+        </button>
+        <button type="button" id="addItemBtn"
+                class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center gap-2">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          Добавить вручную
+        </button>
+      </div>
+    </div>
+    
+    <!-- Список позиций -->
+    <div id="itemsContainer" class="space-y-3 mb-6">
+      <!-- Позиции будут добавляться через JavaScript -->
+    </div>
+    
+    <!-- Материал обвязки -->
+    <div class="border-t pt-6 mt-6">
+      <h3 class="font-semibold mb-4 flex items-center gap-2">
+        <i data-lucide="pipe" class="w-5 h-5 text-gray-500"></i>
+        Материал обвязки (опционально)
+      </h3>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <label class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+          <input type="radio" name="pipingMaterial" value="polypropylene" data-price="8000" class="text-blue-600">
+          <div class="flex-1">
+            <div class="font-medium">Полипропилен</div>
+            <div class="text-sm text-gray-500">Надёжный, доступный</div>
+          </div>
+          <input type="number" 
+                 class="piping-price w-24 px-2 py-1 border rounded text-right text-sm" 
+                 value="8000" 
+                 min="0" 
+                 step="100">
+          <span class="text-sm text-gray-500">₽</span>
+        </label>
+        
+        <label class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+          <input type="radio" name="pipingMaterial" value="metal_plastic" data-price="10000" class="text-blue-600">
+          <div class="flex-1">
+            <div class="font-medium">Металлопластик</div>
+            <div class="text-sm text-gray-500">Гибкий, удобный</div>
+          </div>
+          <input type="number" 
+                 class="piping-price w-24 px-2 py-1 border rounded text-right text-sm" 
+                 value="10000" 
+                 min="0" 
+                 step="100">
+          <span class="text-sm text-gray-500">₽</span>
+        </label>
+        
+        <label class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+          <input type="radio" name="pipingMaterial" value="stainless" data-price="15000" class="text-blue-600">
+          <div class="flex-1">
+            <div class="font-medium">Нержавеющая сталь</div>
+            <div class="text-sm text-gray-500">Долговечная</div>
+          </div>
+          <input type="number" 
+                 class="piping-price w-24 px-2 py-1 border rounded text-right text-sm" 
+                 value="15000" 
+                 min="0" 
+                 step="100">
+          <span class="text-sm text-gray-500">₽</span>
+        </label>
+        
+        <label class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+          <input type="radio" name="pipingMaterial" value="copper" data-price="18000" class="text-blue-600">
+          <div class="flex-1">
+            <div class="font-medium">Медь</div>
+            <div class="text-sm text-gray-500">Премиум качество</div>
+          </div>
+          <input type="number" 
+                 class="piping-price w-24 px-2 py-1 border rounded text-right text-sm" 
+                 value="18000" 
+                 min="0" 
+                 step="100">
+          <span class="text-sm text-gray-500">₽</span>
+        </label>
+      </div>
+      <input type="hidden" id="pipingPriceInput" name="pipingPrice" value="0">
+    </div>
+    
+    <!-- Услуги -->
+    <div class="border-t pt-6 mt-6">
+      <h3 class="font-semibold mb-4 flex items-center gap-2">
+        <i data-lucide="wrench" class="w-5 h-5 text-gray-500"></i>
+        Услуги
+      </h3>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <label class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+          <input type="checkbox" name="services[delivery]" value="true" class="service-cb text-blue-600">
+          <div class="flex-1">
+            <div class="font-medium">Доставка</div>
+          </div>
+          <input type="number" 
+                 name="services[deliveryPrice]"
+                 class="service-price w-24 px-2 py-1 border rounded text-right text-sm" 
+                 value="3000" 
+                 min="0" 
+                 step="100">
+          <span class="text-sm text-gray-500">₽</span>
+        </label>
+        
+        <label class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+          <input type="checkbox" name="services[installation]" value="true" class="service-cb text-blue-600">
+          <div class="flex-1">
+            <div class="font-medium">Монтаж</div>
+          </div>
+          <input type="number" 
+                 name="services[installationPrice]"
+                 class="service-price w-24 px-2 py-1 border rounded text-right text-sm" 
+                 value="15000" 
+                 min="0" 
+                 step="100">
+          <span class="text-sm text-gray-500">₽</span>
+        </label>
+        
+        <label class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+          <input type="checkbox" name="services[chiefInstallation]" value="true" class="service-cb text-blue-600">
+          <div class="flex-1">
+            <div class="font-medium">Шеф-монтаж</div>
+          </div>
+          <input type="number" 
+                 name="services[chiefInstallationPrice]"
+                 class="service-price w-24 px-2 py-1 border rounded text-right text-sm" 
+                 value="5000" 
+                 min="0" 
+                 step="100">
+          <span class="text-sm text-gray-500">₽</span>
+        </label>
+        
+        <label class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+          <input type="checkbox" name="services[commissioning]" value="true" class="service-cb text-blue-600">
+          <div class="flex-1">
+            <div class="font-medium">Пуско-наладка</div>
+          </div>
+          <input type="number" 
+                 name="services[commissioningPrice]"
+                 class="service-price w-24 px-2 py-1 border rounded text-right text-sm" 
+                 value="3000" 
+                 min="0" 
+                 step="100">
+          <span class="text-sm text-gray-500">₽</span>
+        </label>
+        
+        <label class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 md:col-span-2">
+          <input type="checkbox" name="services[materials]" value="true" class="service-cb text-blue-600">
+          <div class="flex-1">
+            <div class="font-medium">Расходные материалы</div>
+            <div class="text-xs text-gray-500">Фум-лента, уплотнители и т.д.</div>
+          </div>
+          <input type="number" 
+                 name="services[materialsPrice]"
+                 class="service-price w-24 px-2 py-1 border rounded text-right text-sm" 
+                 value="2000" 
+                 min="0" 
+                 step="100">
+          <span class="text-sm text-gray-500">₽</span>
+        </label>
+      </div>
+    </div>
+    
+    <!-- Итого -->
+    <div class="border-t pt-6 mt-6">
+      <div class="bg-gray-50 rounded-lg p-4 space-y-2">
+        <div class="flex justify-between text-sm">
+          <span class="text-gray-600">Оборудование:</span>
+          <span id="equipmentTotal" class="font-medium">0 ₽</span>
+        </div>
+        <div class="flex justify-between text-sm">
+          <span class="text-gray-600">Обвязка:</span>
+          <span id="pipingTotal" class="font-medium">0 ₽</span>
+        </div>
+        <div class="flex justify-between text-sm">
+          <span class="text-gray-600">Услуги:</span>
+          <span id="servicesTotal" class="font-medium">0 ₽</span>
+        </div>
+        <div class="border-t pt-2 flex justify-between font-semibold">
+          <span>Промежуточный итог:</span>
+          <span id="subtotal" class="text-lg text-blue-600">0 ₽</span>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+</div>

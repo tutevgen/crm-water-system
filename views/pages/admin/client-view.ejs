@@ -1,0 +1,423 @@
+<%# views/pages/admin/client-view.ejs %>
+
+<% layout('layouts/default') %>
+
+<%
+  var c = typeof client !== 'undefined' ? client : {};
+  var details = c.companyDetails || {};
+  var systemInfo = c.system || {};
+%>
+
+<div class="p-6">
+  <!-- Навигация -->
+  <div class="flex items-center gap-2 text-sm text-gray-500 mb-6">
+    <a href="/admin/clients" class="hover:text-blue-600">Клиенты</a>
+    <i data-lucide="chevron-right" class="w-4 h-4"></i>
+    <span class="text-gray-900"><%= c.name || 'Клиент' %></span>
+  </div>
+
+  <!-- Шапка -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+    <div class="flex flex-col md:flex-row md:items-start gap-6">
+      <!-- Аватар -->
+      <div class="flex-shrink-0">
+        <% if (c.avatar) { %>
+          <img src="/img/avatars/<%= c.avatar %>" alt="" class="w-24 h-24 rounded-xl object-cover">
+        <% } else { %>
+          <div class="w-24 h-24 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold">
+            <%= c.name ? c.name.charAt(0).toUpperCase() : '?' %>
+          </div>
+        <% } %>
+      </div>
+      
+      <!-- Основная информация -->
+      <div class="flex-1">
+        <div class="flex items-start justify-between">
+          <div>
+            <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <%= c.name || 'Без имени' %>
+              <% if (c.isVerified) { %>
+                <i data-lucide="badge-check" class="w-5 h-5 text-blue-500" title="Верифицирован"></i>
+              <% } %>
+            </h1>
+            <% if (details.fullName) { %>
+              <p class="text-gray-600 mt-1"><%= details.fullName %></p>
+            <% } %>
+            <div class="flex items-center gap-4 mt-3">
+              <% if (c.isActive !== false) { %>
+                <span class="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-sm rounded">
+                  <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                  Активен
+                </span>
+              <% } else { %>
+                <span class="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-600 text-sm rounded">
+                  <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
+                  Неактивен
+                </span>
+              <% } %>
+              <% if (c.discount && c.discount > 0) { %>
+                <span class="px-2 py-1 bg-green-100 text-green-700 text-sm rounded">Скидка <%= c.discount %>%</span>
+              <% } %>
+              <%
+                var typeLabels = { individual: 'Физ. лицо', company: 'Юр. лицо', ip: 'ИП' };
+                var clientType = details.clientType || 'individual';
+              %>
+              <span class="px-2 py-1 bg-gray-100 text-gray-700 text-sm rounded"><%= typeLabels[clientType] %></span>
+            </div>
+          </div>
+          
+          <!-- Действия -->
+          <div class="flex gap-2">
+            <a href="/admin/clients/<%= c._id %>/edit" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center gap-2">
+              <i data-lucide="pencil" class="w-4 h-4"></i>
+              Редактировать
+            </a>
+            <a href="/proposals/create?client=<%= c._id %>" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
+              <i data-lucide="file-plus" class="w-4 h-4"></i>
+              Создать КП
+            </a>
+          </div>
+        </div>
+        
+        <!-- Контакты -->
+        <div class="flex flex-wrap gap-6 mt-4 pt-4 border-t border-gray-100">
+          <% if (c.email) { %>
+            <a href="mailto:<%= c.email %>" class="flex items-center gap-2 text-gray-600 hover:text-blue-600">
+              <i data-lucide="mail" class="w-4 h-4"></i>
+              <%= c.email %>
+            </a>
+          <% } %>
+          <% if (c.phone) { %>
+            <a href="tel:<%= c.phone %>" class="flex items-center gap-2 text-gray-600 hover:text-blue-600">
+              <i data-lucide="phone" class="w-4 h-4"></i>
+              <%= c.phone %>
+            </a>
+          <% } %>
+          <% if (details.address) { %>
+            <span class="flex items-center gap-2 text-gray-600">
+              <i data-lucide="map-pin" class="w-4 h-4"></i>
+              <%= details.address %>
+            </span>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Основной контент -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Левая колонка (2/3) -->
+    <div class="lg:col-span-2 space-y-6">
+      
+      <!-- Система водоочистки -->
+      <% if (systemInfo && systemInfo.model) { %>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <h2 class="font-semibold text-gray-900 flex items-center gap-2">
+              <i data-lucide="droplets" class="w-5 h-5 text-blue-500"></i>
+              Система водоочистки
+            </h2>
+            <a href="/admin/clients/<%= c._id %>/system" class="text-sm text-blue-600 hover:text-blue-800">Подробнее →</a>
+          </div>
+          <div class="p-6">
+            <div class="flex gap-6">
+              <% if (systemInfo.photo) { %>
+                <img src="<%= systemInfo.photo %>" alt="" class="w-32 h-32 rounded-lg object-cover">
+              <% } %>
+              <div class="flex-1 grid grid-cols-2 gap-4">
+                <div>
+                  <p class="text-xs text-gray-500">Модель</p>
+                  <p class="font-medium"><%= systemInfo.model %></p>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500">Дата установки</p>
+                  <p class="font-medium"><%= systemInfo.installedAt ? new Date(systemInfo.installedAt).toLocaleDateString('ru-RU') : '—' %></p>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500">Следующее ТО</p>
+                  <p class="font-medium <%= systemInfo.nextServiceAt && new Date(systemInfo.nextServiceAt) < new Date() ? 'text-red-600' : '' %>">
+                    <%= systemInfo.nextServiceAt ? new Date(systemInfo.nextServiceAt).toLocaleDateString('ru-RU') : '—' %>
+                  </p>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500">Монтажник</p>
+                  <p class="font-medium"><%= systemInfo.installer || '—' %></p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% } %>
+      
+      <!-- Коммерческие предложения -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+          <h2 class="font-semibold text-gray-900 flex items-center gap-2">
+            <i data-lucide="file-text" class="w-5 h-5 text-purple-500"></i>
+            Коммерческие предложения
+          </h2>
+          <a href="/proposals?client=<%= c._id %>" class="text-sm text-blue-600 hover:text-blue-800">Все КП →</a>
+        </div>
+        <% 
+          var proposalsList = typeof proposals !== 'undefined' && Array.isArray(proposals) ? proposals : [];
+        %>
+        <% if (proposalsList.length > 0) { %>
+          <div class="divide-y divide-gray-100">
+            <% proposalsList.slice(0, 5).forEach(function(p) { 
+              var statusLabels = {
+                draft: { text: 'Черновик', cls: 'bg-gray-100 text-gray-700' },
+                sent: { text: 'Отправлено', cls: 'bg-blue-100 text-blue-700' },
+                viewed: { text: 'Просмотрено', cls: 'bg-yellow-100 text-yellow-700' },
+                accepted: { text: 'Принято', cls: 'bg-green-100 text-green-700' },
+                rejected: { text: 'Отклонено', cls: 'bg-red-100 text-red-700' },
+                expired: { text: 'Истекло', cls: 'bg-gray-100 text-gray-500' }
+              };
+              var st = statusLabels[p.status] || statusLabels.draft;
+            %>
+              <a href="/proposals/<%= p._id %>" class="flex items-center justify-between p-4 hover:bg-gray-50">
+                <div>
+                  <p class="font-medium text-gray-900"><%= p.proposalNumber || p.title %></p>
+                  <p class="text-sm text-gray-500"><%= new Date(p.createdAt).toLocaleDateString('ru-RU') %></p>
+                </div>
+                <div class="flex items-center gap-3">
+                  <span class="font-semibold text-gray-900"><%= p.totalPrice ? p.totalPrice.toLocaleString('ru-RU') : 0 %> ₽</span>
+                  <span class="px-2 py-1 text-xs font-medium rounded <%= st.cls %>"><%= st.text %></span>
+                </div>
+              </a>
+            <% }); %>
+          </div>
+        <% } else { %>
+          <div class="p-6 text-center text-gray-500">
+            <p class="mb-3">Нет коммерческих предложений</p>
+            <a href="/proposals/create?client=<%= c._id %>" class="text-blue-600 hover:text-blue-800">Создать первое КП</a>
+          </div>
+        <% } %>
+      </div>
+      
+      <!-- Заказы -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+          <h2 class="font-semibold text-gray-900 flex items-center gap-2">
+            <i data-lucide="shopping-cart" class="w-5 h-5 text-green-500"></i>
+            Заказы
+          </h2>
+          <a href="/admin/orders?client=<%= c._id %>" class="text-sm text-blue-600 hover:text-blue-800">Все заказы →</a>
+        </div>
+        <% 
+          var ordersList = typeof orders !== 'undefined' && Array.isArray(orders) ? orders : [];
+        %>
+        <% if (ordersList.length > 0) { %>
+          <div class="divide-y divide-gray-100">
+            <% ordersList.slice(0, 5).forEach(function(o) { 
+              var orderStatusLabels = {
+                new: { text: 'Новый', cls: 'bg-blue-100 text-blue-700' },
+                processing: { text: 'В работе', cls: 'bg-yellow-100 text-yellow-700' },
+                completed: { text: 'Выполнен', cls: 'bg-green-100 text-green-700' },
+                cancelled: { text: 'Отменён', cls: 'bg-red-100 text-red-700' }
+              };
+              var ost = orderStatusLabels[o.status] || orderStatusLabels.new;
+            %>
+              <a href="/admin/orders/<%= o._id %>" class="flex items-center justify-between p-4 hover:bg-gray-50">
+                <div>
+                  <p class="font-medium text-gray-900">#<%= o.orderNumber || o._id.toString().slice(-6) %></p>
+                  <p class="text-sm text-gray-500"><%= new Date(o.createdAt).toLocaleDateString('ru-RU') %> — <%= o.description || 'Заказ' %></p>
+                </div>
+                <div class="flex items-center gap-3">
+                  <span class="font-semibold text-gray-900"><%= o.totalPrice ? o.totalPrice.toLocaleString('ru-RU') : 0 %> ₽</span>
+                  <span class="px-2 py-1 text-xs font-medium rounded <%= ost.cls %>"><%= ost.text %></span>
+                </div>
+              </a>
+            <% }); %>
+          </div>
+        <% } else { %>
+          <div class="p-6 text-center text-gray-500">
+            Нет заказов
+          </div>
+        <% } %>
+      </div>
+      
+      <!-- История взаимодействий -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+          <h2 class="font-semibold text-gray-900 flex items-center gap-2">
+            <i data-lucide="message-square" class="w-5 h-5 text-orange-500"></i>
+            История взаимодействий
+          </h2>
+          <button type="button" id="addInteractionBtn" class="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            Добавить
+          </button>
+        </div>
+        <% 
+          var interactionsList = typeof interactions !== 'undefined' && Array.isArray(interactions) ? interactions : [];
+        %>
+        <% if (interactionsList.length > 0) { %>
+          <div class="divide-y divide-gray-100">
+            <% interactionsList.slice(0, 10).forEach(function(i) { 
+              var typeIcons = { call: 'phone', email: 'mail', meeting: 'users', note: 'sticky-note' };
+              var icon = typeIcons[i.type] || 'message-circle';
+            %>
+              <div class="p-4">
+                <div class="flex items-start gap-3">
+                  <div class="p-2 bg-gray-100 rounded-lg">
+                    <i data-lucide="<%= icon %>" class="w-4 h-4 text-gray-600"></i>
+                  </div>
+                  <div class="flex-1">
+                    <div class="flex items-center justify-between">
+                      <p class="font-medium text-gray-900"><%= i.title || i.type %></p>
+                      <span class="text-xs text-gray-500"><%= new Date(i.createdAt).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) %></span>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-1"><%= i.description %></p>
+                    <% if (i.user) { %>
+                      <p class="text-xs text-gray-400 mt-1"><%= i.user.name %></p>
+                    <% } %>
+                  </div>
+                </div>
+              </div>
+            <% }); %>
+          </div>
+        <% } else { %>
+          <div class="p-6 text-center text-gray-500">
+            Нет записей
+          </div>
+        <% } %>
+      </div>
+    </div>
+    
+    <!-- Правая колонка (1/3) -->
+    <div class="space-y-6">
+      
+      <!-- Реквизиты -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h2 class="font-semibold text-gray-900">Реквизиты</h2>
+        </div>
+        <div class="p-6 space-y-4 text-sm">
+          <% if (details.inn) { %>
+            <div>
+              <p class="text-xs text-gray-500">ИНН</p>
+              <p class="font-medium"><%= details.inn %></p>
+            </div>
+          <% } %>
+          <% if (details.kpp) { %>
+            <div>
+              <p class="text-xs text-gray-500">КПП</p>
+              <p class="font-medium"><%= details.kpp %></p>
+            </div>
+          <% } %>
+          <% if (details.ogrn) { %>
+            <div>
+              <p class="text-xs text-gray-500">ОГРН</p>
+              <p class="font-medium"><%= details.ogrn %></p>
+            </div>
+          <% } %>
+          <% if (details.legalAddress) { %>
+            <div>
+              <p class="text-xs text-gray-500">Юридический адрес</p>
+              <p class="font-medium"><%= details.legalAddress %></p>
+            </div>
+          <% } %>
+          <% if (details.bankName) { %>
+            <div>
+              <p class="text-xs text-gray-500">Банк</p>
+              <p class="font-medium"><%= details.bankName %></p>
+            </div>
+          <% } %>
+          <% if (details.bik) { %>
+            <div>
+              <p class="text-xs text-gray-500">БИК</p>
+              <p class="font-medium"><%= details.bik %></p>
+            </div>
+          <% } %>
+          <% if (details.rs) { %>
+            <div>
+              <p class="text-xs text-gray-500">Р/С</p>
+              <p class="font-medium break-all"><%= details.rs %></p>
+            </div>
+          <% } %>
+          <% if (details.ks) { %>
+            <div>
+              <p class="text-xs text-gray-500">К/С</p>
+              <p class="font-medium break-all"><%= details.ks %></p>
+            </div>
+          <% } %>
+          <% if (!details.inn && !details.kpp && !details.bankName) { %>
+            <p class="text-gray-500">Реквизиты не заполнены</p>
+          <% } %>
+        </div>
+      </div>
+      
+      <!-- Документы -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+          <h2 class="font-semibold text-gray-900">Документы</h2>
+          <button type="button" class="text-sm text-blue-600 hover:text-blue-800">Загрузить</button>
+        </div>
+        <% 
+          var docsList = typeof documents !== 'undefined' && Array.isArray(documents) ? documents : [];
+        %>
+        <% if (docsList.length > 0) { %>
+          <div class="divide-y divide-gray-100">
+            <% docsList.forEach(function(doc) { %>
+              <a href="<%= doc.url %>" target="_blank" class="flex items-center gap-3 p-4 hover:bg-gray-50">
+                <i data-lucide="file" class="w-5 h-5 text-gray-400"></i>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-gray-900 truncate"><%= doc.name %></p>
+                  <p class="text-xs text-gray-500"><%= doc.type %></p>
+                </div>
+                <i data-lucide="download" class="w-4 h-4 text-gray-400"></i>
+              </a>
+            <% }); %>
+          </div>
+        <% } else { %>
+          <div class="p-6 text-center text-gray-500">
+            <i data-lucide="folder-open" class="w-8 h-8 text-gray-300 mx-auto mb-2"></i>
+            <p class="text-sm">Нет документов</p>
+          </div>
+        <% } %>
+      </div>
+      
+      <!-- Информация -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h2 class="font-semibold text-gray-900">Информация</h2>
+        </div>
+        <div class="p-6 space-y-4 text-sm">
+          <div>
+            <p class="text-xs text-gray-500">Дата регистрации</p>
+            <p class="font-medium"><%= c.createdAt ? new Date(c.createdAt).toLocaleDateString('ru-RU') : '—' %></p>
+          </div>
+          <% if (c.lastLogin) { %>
+            <div>
+              <p class="text-xs text-gray-500">Последний вход</p>
+              <p class="font-medium"><%= new Date(c.lastLogin).toLocaleString('ru-RU') %></p>
+            </div>
+          <% } %>
+          <% if (c.manager) { %>
+            <div>
+              <p class="text-xs text-gray-500">Менеджер</p>
+              <p class="font-medium"><%= c.manager.name %></p>
+            </div>
+          <% } %>
+          <% if (c.source) { %>
+            <div>
+              <p class="text-xs text-gray-500">Источник</p>
+              <p class="font-medium"><%= c.source %></p>
+            </div>
+          <% } %>
+          <% if (c.notes) { %>
+            <div>
+              <p class="text-xs text-gray-500">Заметки</p>
+              <p class="text-gray-700"><%= c.notes %></p>
+            </div>
+          <% } %>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+</div>
+
+<script>
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+</script>

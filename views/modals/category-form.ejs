@@ -1,0 +1,143 @@
+<%# views/modals/category-form.ejs - модальное окно управления категориями %>
+<!-- Модальное окно категорий -->
+<div id="categoriesModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+    <!-- Заголовок -->
+    <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+      <h2 class="text-lg font-semibold text-gray-900">Категории</h2>
+      <button onclick="closeCategoriesModal()" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+    
+    <!-- Форма добавления -->
+    <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+      <form id="categoryForm" class="flex gap-3">
+        <input type="hidden" id="categoryId" value="">
+        <div class="flex-1">
+          <input type="text" id="categoryName" placeholder="Название категории"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
+        </div>
+        <div class="w-48">
+          <select id="categoryParent" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            <option value="">Корневая</option>
+            <% if (typeof categories !== 'undefined') { categories.filter(function(c) { return !c.parent; }).forEach(function(cat) { %>
+              <option value="<%= cat._id %>"><%= cat.name %></option>
+            <% }); } %>
+          </select>
+        </div>
+        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span id="categorySubmitText">Добавить</span>
+        </button>
+      </form>
+    </div>
+    
+    <!-- Список категорий -->
+    <div class="px-6 py-4 overflow-y-auto max-h-96">
+      <% if (typeof categories !== 'undefined' && categories.length > 0) { %>
+        <div class="space-y-2">
+          <% categories.filter(function(c) { return !c.parent; }).forEach(function(cat) { %>
+            <div class="border border-gray-200 rounded-lg">
+              <div class="flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100">
+                <i data-lucide="folder" class="w-5 h-5 text-gray-600"></i>
+                <span class="font-medium text-gray-900 flex-1"><%= cat.name %></span>
+                <span class="text-sm text-gray-500"><%= cat.productCount || 0 %></span>
+                <button onclick="editCategory('<%= cat._id %>', '<%= cat.name %>', '')" class="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded">
+                  <i data-lucide="pencil" class="w-4 h-4"></i>
+                </button>
+                <button onclick="deleteCat('<%= cat._id %>', '<%= cat.name %>')" class="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              </div>
+              <% var children = categories.filter(function(c) { return c.parent && c.parent.toString() === cat._id.toString(); });
+                 if (children.length > 0) { %>
+                <div class="border-t border-gray-200">
+                  <% children.forEach(function(child) { %>
+                    <div class="flex items-center gap-3 p-3 pl-8 hover:bg-gray-50 border-t border-gray-100 first:border-0">
+                      <i data-lucide="folder-open" class="w-4 h-4 text-gray-400"></i>
+                      <span class="text-gray-700 flex-1"><%= child.name %></span>
+                      <span class="text-sm text-gray-500"><%= child.productCount || 0 %></span>
+                      <button onclick="editCategory('<%= child._id %>', '<%= child.name %>', '<%= cat._id %>')" class="p-1.5 text-gray-500 hover:text-blue-600 rounded">
+                        <i data-lucide="pencil" class="w-4 h-4"></i>
+                      </button>
+                      <button onclick="deleteCat('<%= child._id %>', '<%= child.name %>')" class="p-1.5 text-gray-500 hover:text-red-600 rounded">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                      </button>
+                    </div>
+                  <% }); %>
+                </div>
+              <% } %>
+            </div>
+          <% }); %>
+        </div>
+      <% } else { %>
+        <p class="text-center text-gray-500 py-8">Нет категорий</p>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openCategoriesModal() {
+    document.getElementById('categoriesModal').classList.remove('hidden');
+    resetCatForm();
+    lucide.createIcons();
+  }
+  
+  function closeCategoriesModal() {
+    document.getElementById('categoriesModal').classList.add('hidden');
+  }
+  
+  function resetCatForm() {
+    document.getElementById('categoryId').value = '';
+    document.getElementById('categoryName').value = '';
+    document.getElementById('categoryParent').value = '';
+    document.getElementById('categorySubmitText').textContent = 'Добавить';
+  }
+  
+  function editCategory(id, name, parent) {
+    document.getElementById('categoryId').value = id;
+    document.getElementById('categoryName').value = name;
+    document.getElementById('categoryParent').value = parent || '';
+    document.getElementById('categorySubmitText').textContent = 'Сохранить';
+    document.getElementById('categoryName').focus();
+  }
+  
+  async function deleteCat(id, name) {
+    if (!confirm('Удалить "' + name + '"?')) return;
+    try {
+      var res = await fetch('/admin/products/categories/' + id, {
+        method: 'DELETE',
+        headers: { 'X-CSRF-Token': document.getElementById('csrfToken').value }
+      });
+      var data = await res.json();
+      if (data.success) location.reload();
+      else alert(data.message);
+    } catch (e) { alert('Ошибка'); }
+  }
+  
+  document.getElementById('categoryForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    var name = document.getElementById('categoryName').value.trim();
+    var parent = document.getElementById('categoryParent').value;
+    var id = document.getElementById('categoryId').value;
+    if (!name) return alert('Введите название');
+    
+    try {
+      var url = id ? '/admin/products/categories/' + id : '/admin/products/categories';
+      var res = await fetch(url, {
+        method: id ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': document.getElementById('csrfToken').value },
+        body: JSON.stringify({ name: name, parent: parent || null })
+      });
+      var data = await res.json();
+      if (data.success) location.reload();
+      else alert(data.message);
+    } catch (e) { alert('Ошибка'); }
+  });
+  
+  document.getElementById('categoriesModal').addEventListener('click', function(e) {
+    if (e.target === this) closeCategoriesModal();
+  });
+</script>

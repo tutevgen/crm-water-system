@@ -1,0 +1,22 @@
+
+<div id="orgForm" class="hidden bg-white p-6 rounded-xl shadow space-y-4 mt-4">
+  <h2 class="text-lg font-bold">Реквизиты организации</h2>
+  <form action="/settings/org-details" method="POST" class="space-y-4">
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <input type="text" name="fullName" placeholder="Полное наименование" class="w-full border p-2 rounded" required />
+      <input type="text" name="shortName" placeholder="Сокращенное наименование" class="w-full border p-2 rounded" />
+      <input type="text" name="inn" placeholder="ИНН" class="w-full border p-2 rounded" required />
+      <input type="text" name="kpp" placeholder="КПП" class="w-full border p-2 rounded" />
+      <input type="text" name="legalAddress" placeholder="Юридический адрес" class="w-full border p-2 rounded" />
+      <input type="text" name="bank" placeholder="Банк" class="w-full border p-2 rounded" />
+      <input type="text" name="bik" placeholder="БИК" class="w-full border p-2 rounded" />
+      <input type="text" name="rs" placeholder="Р/счет" class="w-full border p-2 rounded" />
+      <input type="text" name="ks" placeholder="Кор/счет" class="w-full border p-2 rounded" />
+    </div>
+
+    <button class="bg-black text-white px-6 py-2 rounded hover:bg-gray-800 transition">Сохранить реквизиты</button>
+  </form>
+</div>
+
+<button onclick="toggleOrgForm()" class="mt-6 text-sm text-blue-600 hover:underline">Добавить реквизиты организации</button>

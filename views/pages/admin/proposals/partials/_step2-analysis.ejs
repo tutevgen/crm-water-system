@@ -1,0 +1,239 @@
+<div id="step2" class="step-content">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    
+    <!-- Анализ воды -->
+    <div class="lg:col-span-2 space-y-4">
+      
+      <!-- Основные показатели -->
+      <div class="bg-white rounded-xl border shadow-sm p-6">
+        <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+          <i data-lucide="droplet" class="w-5 h-5 text-blue-500"></i>
+          Анализ воды
+        </h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Железо -->
+          <div class="analysis-card bg-gray-50 rounded-lg p-4 border">
+            <label class="block text-sm font-medium mb-2">
+              Железо (Fe), мг/л
+              <span class="text-xs text-gray-500 ml-1">(норма: до 0.3)</span>
+            </label>
+            <input type="number" 
+                   name="analysis[iron]" 
+                   step="0.01" 
+                   min="0"
+                   placeholder="0.00"
+                   data-norm="0.3"
+                   class="analysis-input w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+          </div>
+          
+          <!-- Марганец -->
+          <div class="analysis-card bg-gray-50 rounded-lg p-4 border">
+            <label class="block text-sm font-medium mb-2">
+              Марганец (Mn), мг/л
+              <span class="text-xs text-gray-500 ml-1">(норма: до 0.1)</span>
+            </label>
+            <input type="number" 
+                   name="analysis[manganese]" 
+                   step="0.01" 
+                   min="0"
+                   placeholder="0.00"
+                   data-norm="0.1"
+                   class="analysis-input w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+          </div>
+          
+          <!-- Жёсткость -->
+          <div class="analysis-card bg-gray-50 rounded-lg p-4 border">
+            <label class="block text-sm font-medium mb-2">
+              Жёсткость общая, °Ж
+              <span class="text-xs text-gray-500 ml-1">(норма: до 7)</span>
+            </label>
+            <input type="number" 
+                   name="analysis[hardness]" 
+                   step="0.1" 
+                   min="0"
+                   placeholder="0.0"
+                   data-norm="7"
+                   class="analysis-input w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+          </div>
+          
+          <!-- pH -->
+          <div class="analysis-card bg-gray-50 rounded-lg p-4 border">
+            <label class="block text-sm font-medium mb-2">
+              pH (кислотность)
+              <span class="text-xs text-gray-500 ml-1">(норма: 6-9)</span>
+            </label>
+            <input type="number" 
+                   name="analysis[ph]" 
+                   step="0.1" 
+                   min="0" 
+                   max="14"
+                   placeholder="7.0"
+                   class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+          </div>
+          
+          <!-- Сероводород -->
+          <div class="analysis-card bg-gray-50 rounded-lg p-4 border">
+            <label class="block text-sm font-medium mb-2">
+              Сероводород (H₂S), мг/л
+              <span class="text-xs text-gray-500 ml-1">(норма: 0.03)</span>
+            </label>
+            <input type="number" 
+                   name="analysis[hydrogen_sulfide]" 
+                   step="0.001" 
+                   min="0"
+                   placeholder="0.000"
+                   data-norm="0.03"
+                   class="analysis-input w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+          </div>
+          
+          <!-- Окисляемость -->
+          <div class="analysis-card bg-gray-50 rounded-lg p-4 border">
+            <label class="block text-sm font-medium mb-2">
+              Окисляемость, мг О₂/л
+              <span class="text-xs text-gray-500 ml-1">(норма: до 5)</span>
+            </label>
+            <input type="number" 
+                   name="analysis[oxidability]" 
+                   step="0.1" 
+                   min="0"
+                   placeholder="0.0"
+                   data-norm="5"
+                   class="analysis-input w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+          </div>
+          
+          <!-- Мутность -->
+          <div class="analysis-card bg-gray-50 rounded-lg p-4 border">
+            <label class="block text-sm font-medium mb-2">
+              Мутность, ЕМФ
+              <span class="text-xs text-gray-500 ml-1">(норма: до 2.6)</span>
+            </label>
+            <input type="number" 
+                   name="analysis[turbidity]" 
+                   step="0.1" 
+                   min="0"
+                   placeholder="0.0"
+                   data-norm="2.6"
+                   class="analysis-input w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+          </div>
+          
+          <!-- Минерализация -->
+          <div class="analysis-card bg-gray-50 rounded-lg p-4 border">
+            <label class="block text-sm font-medium mb-2">
+              Минерализация (TDS), мг/л
+              <span class="text-xs text-gray-500 ml-1">(норма: до 1000)</span>
+            </label>
+            <input type="number" 
+                   name="analysis[tds]" 
+                   step="1" 
+                   min="0"
+                   placeholder="0"
+                   data-norm="1000"
+                   class="analysis-input w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+      </div>
+      
+      <!-- Информация об объекте -->
+      <div class="bg-white rounded-xl border shadow-sm p-6">
+        <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+          <i data-lucide="home" class="w-5 h-5 text-blue-500"></i>
+          Информация об объекте
+        </h2>
+        
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium mb-2">Адрес объекта</label>
+            <input type="text" 
+                   name="objectAddress" 
+                   placeholder="г. Москва, ул. Примерная, д. 1"
+                   class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-2">Тип объекта</label>
+              <select name="objectType" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+                <option value="house">Частный дом</option>
+                <option value="dacha">Дача</option>
+                <option value="apartment">Квартира</option>
+                <option value="commercial">Коммерческое</option>
+                <option value="production">Производство</option>
+              </select>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium mb-2">Источник воды</label>
+              <select name="waterSource" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+                <option value="well">Колодец</option>
+                <option value="borehole">Скважина</option>
+                <option value="central">Центральное водоснабжение</option>
+                <option value="river">Река/озеро</option>
+              </select>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium mb-2">Жильцов</label>
+              <input type="number" 
+                     name="residents" 
+                     value="4" 
+                     min="1" 
+                     max="50"
+                     class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium mb-2">Точек водоразбора</label>
+              <input type="number" 
+                     name="waterPoints" 
+                     value="8" 
+                     min="1" 
+                     max="100"
+                     class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Справка -->
+    <div class="space-y-4">
+      <div class="bg-blue-50 rounded-xl border border-blue-200 p-6">
+        <h3 class="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+          <i data-lucide="info" class="w-5 h-5"></i>
+          Нормативы
+        </h3>
+        <div class="text-sm text-blue-800 space-y-2">
+          <div class="flex justify-between py-1 border-b border-blue-200">
+            <span>Железо:</span>
+            <span class="font-semibold">до 0.3 мг/л</span>
+          </div>
+          <div class="flex justify-between py-1 border-b border-blue-200">
+            <span>Марганец:</span>
+            <span class="font-semibold">до 0.1 мг/л</span>
+          </div>
+          <div class="flex justify-between py-1 border-b border-blue-200">
+            <span>Жёсткость:</span>
+            <span class="font-semibold">до 7 °Ж</span>
+          </div>
+          <div class="flex justify-between py-1">
+            <span>pH:</span>
+            <span class="font-semibold">6.0 - 9.0</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bg-yellow-50 rounded-xl border border-yellow-200 p-6">
+        <h3 class="font-semibold text-yellow-900 mb-2 flex items-center gap-2">
+          <i data-lucide="alert-circle" class="w-5 h-5"></i>
+          Подсказка
+        </h3>
+        <p class="text-sm text-yellow-800">
+          Поля подсветятся красным при превышении нормы. 
+          Анализ не обязателен, но помогает подобрать оборудование.
+        </p>
+      </div>
+    </div>
+    
+  </div>
+</div>

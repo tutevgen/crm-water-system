@@ -1,0 +1,18 @@
+<div id="step4" class="step-content">
+  <div class="bg-white rounded-xl border shadow-sm p-6">
+    <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+      <i data-lucide="image" class="w-5 h-5 text-blue-500"></i>
+      Фото работ
+    </h2>
+    
+    <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors cursor-pointer"
+         onclick="document.getElementById('workPhotosInput').click()">
+      <i data-lucide="images" class="w-12 h-12 mx-auto text-gray-400 mb-3"></i>
+      <p class="text-gray-600">Загрузите фотографии работ</p>
+      <p class="text-sm text-gray-400 mt-1">До 5 изображений</p>
+      <input type="file" name="workPhotosUpload" id="workPhotosInput" accept="image/*" multiple class="hidden">
+    </div>
+    
+    <div id="workPhotosPreview" class="flex flex-wrap gap-2 mt-4"></div>
+  </div>
+</div>

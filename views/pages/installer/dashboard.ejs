@@ -1,0 +1,130 @@
+<%# views/pages/installer/dashboard.ejs %>
+<% layout('layouts/default') %>
+<%
+  var s = typeof stats !== 'undefined' ? stats : {};
+  var upcoming = typeof upcomingRequests !== 'undefined' ? upcomingRequests : [];
+  var installs = typeof activeInstallations !== 'undefined' ? activeInstallations : [];
+  var fmt = function(n){ return (Number(n)||0).toLocaleString('ru-RU'); };
+  var fmtDate = function(d){ return d ? new Date(d).toLocaleDateString('ru-RU') : '—'; };
+  var typeNames = { maintenance:'ТО', refill:'Перезасыпка', repair:'Ремонт', analysis:'Анализ', other:'Заявка' };
+  var statusColors = { new:'bg-blue-100 text-blue-700', in_progress:'bg-yellow-100 text-yellow-700',
+    accepted:'bg-green-100 text-green-700', accepted_premium:'bg-amber-100 text-amber-700' };
+%>
+
+<div class="p-4 md:p-6 max-w-5xl mx-auto space-y-5">
+
+  <!-- Приветствие -->
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">Добро пожаловать, <%= user.name || 'Монтажник' %>!</h1>
+    <p class="text-sm text-gray-500 mt-0.5">Панель монтажника · Нова Фильтр</p>
+  </div>
+
+  <!-- Статистика -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div class="bg-white rounded-xl shadow-sm border p-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+          <i data-lucide="inbox" class="w-5 h-5 text-blue-600"></i>
+        </div>
+        <div>
+          <p class="text-2xl font-bold text-gray-900"><%= s.activeRequests || 0 %></p>
+          <p class="text-xs text-gray-500">Активные заявки</p>
+        </div>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border p-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
+          <i data-lucide="truck" class="w-5 h-5 text-orange-600"></i>
+        </div>
+        <div>
+          <p class="text-2xl font-bold text-gray-900"><%= s.activeInstallations || 0 %></p>
+          <p class="text-xs text-gray-500">Монтажи в работе</p>
+        </div>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border p-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center">
+          <i data-lucide="check-circle" class="w-5 h-5 text-green-600"></i>
+        </div>
+        <div>
+          <p class="text-2xl font-bold text-gray-900"><%= s.completedMonth || 0 %></p>
+          <p class="text-xs text-gray-500">Выполнено за месяц</p>
+        </div>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border p-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+          <i data-lucide="award" class="w-5 h-5 text-emerald-600"></i>
+        </div>
+        <div>
+          <p class="text-2xl font-bold text-gray-900"><%= s.completedInstallations || 0 %></p>
+          <p class="text-xs text-gray-500">Монтажей за месяц</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid md:grid-cols-2 gap-5">
+
+    <!-- Ближайшие заявки -->
+    <div class="bg-white rounded-xl shadow-sm border">
+      <div class="p-4 border-b flex items-center justify-between">
+        <h2 class="font-bold text-gray-900">Ближайшие заявки</h2>
+        <a href="/installer/requests" class="text-sm text-blue-600 hover:text-blue-800">Все →</a>
+      </div>
+      <div class="divide-y">
+        <% if(upcoming.length === 0){ %>
+          <div class="p-6 text-center text-gray-400 text-sm">Нет активных заявок</div>
+        <% } else { upcoming.forEach(function(r){ %>
+        <div class="p-4 hover:bg-gray-50 transition">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-orange-50 flex items-center justify-center flex-shrink-0">
+              <i data-lucide="wrench" class="w-4 h-4 text-orange-600"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="font-medium text-gray-900 text-sm truncate"><%= typeNames[r.serviceType] || r.serviceType %> — <%= r.clientName || (r.clientId && r.clientId.name) || 'Клиент' %></p>
+              <div class="flex items-center gap-3 text-xs text-gray-500 mt-0.5">
+                <span><%= r.clientPhone || (r.clientId && r.clientId.phone) || '' %></span>
+                <% if(r.preferredDate){ %><span class="font-medium text-blue-600"><%= fmtDate(r.preferredDate) %></span><% } %>
+              </div>
+            </div>
+            <span class="text-xs px-2 py-1 rounded-full font-medium <%= r.status === 'new' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700' %>">
+              <%= r.status === 'new' ? 'Новая' : 'В работе' %>
+            </span>
+          </div>
+        </div>
+        <% }) } %>
+      </div>
+    </div>
+
+    <!-- Активные монтажи -->
+    <div class="bg-white rounded-xl shadow-sm border">
+      <div class="p-4 border-b flex items-center justify-between">
+        <h2 class="font-bold text-gray-900">Монтажи в работе</h2>
+        <a href="/installer/trips" class="text-sm text-blue-600 hover:text-blue-800">Все →</a>
+      </div>
+      <div class="divide-y">
+        <% if(installs.length === 0){ %>
+          <div class="p-6 text-center text-gray-400 text-sm">Нет активных монтажей</div>
+        <% } else { installs.forEach(function(p){ %>
+        <div class="p-4 hover:bg-gray-50 transition">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
+              <i data-lucide="home" class="w-4 h-4 text-indigo-600"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="font-medium text-gray-900 text-sm"><%= p.proposalNumber %> — <%= p.clientName || 'Клиент' %></p>
+              <p class="text-xs text-gray-500 mt-0.5 truncate"><%= p.objectAddress || '' %></p>
+            </div>
+            <span class="text-sm font-semibold text-gray-900"><%= fmt(p.totalPrice || 0) %> ₽</span>
+          </div>
+        </div>
+        <% }) } %>
+      </div>
+    </div>
+
+  </div>
+</div>

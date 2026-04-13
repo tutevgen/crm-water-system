@@ -1,0 +1,423 @@
+<%# views/pages/client/system.ejs %>
+
+<% layout('layouts/default') %>
+
+<%
+  var system = typeof systemInfo !== 'undefined' && systemInfo ? systemInfo : null;
+  var components = typeof systemComponents !== 'undefined' ? systemComponents : [];
+  var serviceSchedule = typeof services !== 'undefined' ? services : [];
+  var serviceHistory = typeof history !== 'undefined' ? history : [];
+%>
+
+<div class="p-4 md:p-6 max-w-6xl mx-auto space-y-6">
+  
+  <!-- Заголовок -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Моя система водоочистки</h1>
+      <p class="text-gray-500 mt-1">Информация об установленном оборудовании</p>
+    </div>
+    <button type="button" id="orderServiceBtnTop" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
+      <i data-lucide="wrench" class="w-4 h-4"></i>
+      Заказать обслуживание
+    </button>
+  </div>
+
+  <% if (system) { %>
+    <!-- Основная информация о системе -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div class="flex flex-col lg:flex-row">
+        <!-- Фото системы -->
+        <div class="lg:w-2/5">
+          <% if (system.photo) { %>
+            <img src="<%= system.photo %>" alt="Система водоочистки" class="w-full h-64 lg:h-full object-cover">
+          <% } else { %>
+            <div class="w-full h-64 lg:h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+              <i data-lucide="droplets" class="w-24 h-24 text-blue-400"></i>
+            </div>
+          <% } %>
+        </div>
+        
+        <!-- Информация -->
+        <div class="lg:w-3/5 p-6">
+          <div class="flex items-start justify-between mb-4">
+            <div>
+              <h2 class="text-xl font-bold text-gray-900"><%= system.model || 'Система водоочистки' %></h2>
+              <% if (system.serialNumber) { %>
+                <p class="text-sm text-gray-500">Серийный номер: <%= system.serialNumber %></p>
+              <% } %>
+            </div>
+            <% if (system.status === 'active') { %>
+              <span class="px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full flex items-center gap-1">
+                <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                Активна
+              </span>
+            <% } else { %>
+              <span class="px-3 py-1 bg-gray-100 text-gray-600 text-sm font-medium rounded-full">
+                <%= system.status || 'Неизвестно' %>
+              </span>
+            <% } %>
+          </div>
+          
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-gray-50 rounded-lg p-3">
+              <p class="text-xs text-gray-500 mb-1">Дата установки</p>
+              <p class="font-semibold text-gray-900">
+                <%= system.installedAt ? new Date(system.installedAt).toLocaleDateString('ru-RU') : '—' %>
+              </p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-3">
+              <p class="text-xs text-gray-500 mb-1">Гарантия до</p>
+              <% 
+                var warrantyDate = system.warrantyUntil ? new Date(system.warrantyUntil) : null;
+                var warrantyExpired = warrantyDate && warrantyDate < new Date();
+              %>
+              <p class="font-semibold <%= warrantyExpired ? 'text-red-600' : 'text-gray-900' %>">
+                <%= warrantyDate ? warrantyDate.toLocaleDateString('ru-RU') : '—' %>
+                <% if (warrantyExpired) { %><span class="text-xs">(истекла)</span><% } %>
+              </p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-3">
+              <p class="text-xs text-gray-500 mb-1">Следующее ТО</p>
+              <% 
+                var nextService = system.nextServiceAt ? new Date(system.nextServiceAt) : null;
+                var serviceOverdue = nextService && nextService < new Date();
+              %>
+              <p class="font-semibold <%= serviceOverdue ? 'text-red-600' : 'text-gray-900' %>">
+                <%= nextService ? nextService.toLocaleDateString('ru-RU') : '—' %>
+                <% if (serviceOverdue) { %><span class="text-xs">(просрочено!)</span><% } %>
+              </p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-3">
+              <p class="text-xs text-gray-500 mb-1">Производительность</p>
+              <p class="font-semibold text-gray-900"><%= system.capacity || '—' %> м³/ч</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-3">
+              <p class="text-xs text-gray-500 mb-1">Средний расход</p>
+              <p class="font-semibold text-gray-900"><%= system.avgConsumption || '—' %> л/сут</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-3">
+              <p class="text-xs text-gray-500 mb-1">Монтажник</p>
+              <p class="font-semibold text-gray-900"><%= system.installer || '—' %></p>
+            </div>
+          </div>
+          
+          <% if (system.description) { %>
+            <p class="text-gray-600 text-sm"><%= system.description %></p>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Компоненты системы -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <h2 class="font-semibold text-gray-900 flex items-center gap-2">
+          <i data-lucide="layers" class="w-5 h-5 text-blue-500"></i>
+          Состав оборудования
+        </h2>
+      </div>
+      
+      <% if (components.length > 0) { %>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Компонент</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Описание / Модель</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Интервал замены</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+              <% components.forEach(function(comp) { %>
+                <tr class="hover:bg-gray-50">
+                  <td class="px-4 py-3">
+                    <div class="flex items-center gap-2">
+                      <% if (comp.icon) { %>
+                        <i data-lucide="<%= comp.icon %>" class="w-4 h-4 text-gray-400"></i>
+                      <% } %>
+                      <span class="font-medium text-gray-900"><%= comp.name %></span>
+                    </div>
+                  </td>
+                  <td class="px-4 py-3 text-gray-600"><%= comp.description || comp.model || '—' %></td>
+                  <td class="px-4 py-3 text-gray-600"><%= comp.serviceInterval || '—' %></td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      <% } else { %>
+        <div class="p-6 text-center text-gray-500">
+          <p>Информация о компонентах не загружена</p>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- График обслуживания -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+        <h2 class="font-semibold text-gray-900 flex items-center gap-2">
+          <i data-lucide="calendar" class="w-5 h-5 text-green-500"></i>
+          График обслуживания
+        </h2>
+        <button type="button" id="orderServiceBtnSchedule" class="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          Заказать ТО
+        </button>
+      </div>
+      
+      <% if (serviceSchedule.length > 0) { %>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Компонент</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Интервал</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Последняя замена</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Следующая замена</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Статус</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+              <% serviceSchedule.forEach(function(s) { 
+                var daysLeft = s.nextDate ? Math.ceil((new Date(s.nextDate) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+                var statusClass = '';
+                var statusText = '';
+                if (daysLeft !== null) {
+                  if (daysLeft < 0) {
+                    statusClass = 'bg-red-100 text-red-700';
+                    statusText = 'Просрочено';
+                  } else if (daysLeft <= 7) {
+                    statusClass = 'bg-yellow-100 text-yellow-700';
+                    statusText = 'Скоро';
+                  } else if (daysLeft <= 30) {
+                    statusClass = 'bg-blue-100 text-blue-700';
+                    statusText = 'В норме';
+                  } else {
+                    statusClass = 'bg-green-100 text-green-700';
+                    statusText = 'OK';
+                  }
+                }
+              %>
+                <tr class="hover:bg-gray-50">
+                  <td class="px-4 py-3 font-medium text-gray-900"><%= s.component %></td>
+                  <td class="px-4 py-3 text-gray-600"><%= s.interval %></td>
+                  <td class="px-4 py-3 text-gray-600"><%= s.lastDate ? new Date(s.lastDate).toLocaleDateString('ru-RU') : '—' %></td>
+                  <td class="px-4 py-3 text-gray-900 font-medium"><%= s.nextDate ? new Date(s.nextDate).toLocaleDateString('ru-RU') : '—' %></td>
+                  <td class="px-4 py-3">
+                    <% if (statusText) { %>
+                      <span class="px-2 py-1 text-xs font-medium rounded <%= statusClass %>"><%= statusText %></span>
+                    <% } else { %>
+                      <span class="text-gray-400">—</span>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      <% } else { %>
+        <div class="p-6 text-center text-gray-500">
+          <p>График обслуживания не загружен</p>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- История обслуживания -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <h2 class="font-semibold text-gray-900 flex items-center gap-2">
+          <i data-lucide="history" class="w-5 h-5 text-purple-500"></i>
+          История обслуживания
+        </h2>
+      </div>
+      
+      <% if (serviceHistory.length > 0) { %>
+        <div class="divide-y divide-gray-200">
+          <% serviceHistory.forEach(function(h) { %>
+            <div class="p-4 hover:bg-gray-50">
+              <div class="flex items-start justify-between">
+                <div>
+                  <p class="font-medium text-gray-900"><%= h.title %></p>
+                  <p class="text-sm text-gray-600 mt-1"><%= h.description %></p>
+                  <p class="text-xs text-gray-400 mt-2">
+                    <%= new Date(h.date).toLocaleDateString('ru-RU') %>
+                    <% if (h.technician) { %> • <%= h.technician %><% } %>
+                  </p>
+                </div>
+                <% if (h.cost) { %>
+                  <span class="font-medium text-gray-900"><%= h.cost.toLocaleString('ru-RU') %> ₽</span>
+                <% } %>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+      <% } else { %>
+        <div class="p-6 text-center text-gray-500">
+          <p>История обслуживания пуста</p>
+        </div>
+      <% } %>
+    </div>
+
+  <% } else { %>
+    <!-- Нет установленной системы -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+      <div class="max-w-md mx-auto">
+        <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <i data-lucide="droplets" class="w-10 h-10 text-blue-500"></i>
+        </div>
+        <h2 class="text-xl font-bold text-gray-900 mb-2">Система не установлена</h2>
+        <p class="text-gray-600 mb-6">
+          У вас пока нет установленной системы водоочистки. Закажите анализ воды и подбор оборудования!
+        </p>
+        <div class="flex flex-col sm:flex-row gap-3 justify-center">
+          <a href="/contacts" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2">
+            <i data-lucide="phone" class="w-4 h-4"></i>
+            Связаться с нами
+          </a>
+          <a href="/client/store" class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2">
+            <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+            Каталог оборудования
+          </a>
+        </div>
+      </div>
+    </div>
+  <% } %>
+
+  <!-- Рекомендации -->
+  <div class="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl p-6">
+    <h3 class="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+      <i data-lucide="lightbulb" class="w-5 h-5 text-yellow-500"></i>
+      Рекомендации по уходу
+    </h3>
+    <ul class="text-sm text-gray-700 space-y-2">
+      <li class="flex items-start gap-2">
+        <i data-lucide="check" class="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0"></i>
+        <span>Регулярно проверяйте уровень соли в солевом баке — минимум раз в 2 недели</span>
+      </li>
+      <li class="flex items-start gap-2">
+        <i data-lucide="check" class="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0"></i>
+        <span>Меняйте механические фильтры при снижении давления воды</span>
+      </li>
+      <li class="flex items-start gap-2">
+        <i data-lucide="check" class="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0"></i>
+        <span>Не откладывайте плановое обслуживание — это продлит срок службы оборудования</span>
+      </li>
+      <li class="flex items-start gap-2">
+        <i data-lucide="check" class="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0"></i>
+        <span>При появлении посторонних звуков или запаха — сразу обращайтесь к специалистам</span>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<!-- Модалка заказа обслуживания -->
+<div id="serviceModal" class="fixed inset-0 bg-black/50 z-50 hidden justify-center items-center p-4">
+  <div class="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+    <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+      <h3 class="font-semibold text-gray-900">Заявка на обслуживание</h3>
+      <button type="button" id="closeServiceModalBtn" class="p-1 text-gray-400 hover:text-gray-600">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+    <form id="serviceForm" class="p-6 space-y-4">
+      <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+      
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Тип обслуживания *</label>
+        <select name="serviceType" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+          <option value="">Выберите тип</option>
+          <option value="filter_change">Замена фильтра</option>
+          <option value="salt_refill">Дозаправка соли</option>
+          <option value="maintenance">Плановое ТО</option>
+          <option value="repair">Ремонт</option>
+          <option value="consultation">Консультация</option>
+          <option value="other">Другое</option>
+        </select>
+      </div>
+      
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Удобная дата</label>
+        <input type="date" name="preferredDate" min="<%= new Date().toISOString().split('T')[0] %>"
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+      </div>
+      
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Комментарий</label>
+        <textarea name="comment" rows="3" placeholder="Опишите проблему или пожелания..."
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"></textarea>
+      </div>
+      
+      <div class="flex gap-3 pt-2">
+        <button type="button" id="cancelServiceBtn" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+          Отмена
+        </button>
+        <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+          Отправить заявку
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function() {
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+  
+  var modal = document.getElementById('serviceModal');
+  var form = document.getElementById('serviceForm');
+  
+  function openModal() {
+    modal.style.display = 'flex';
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+  
+  function closeModal() {
+    modal.style.display = 'none';
+  }
+  
+  // Кнопки открытия модалки
+  var openBtns = ['orderServiceBtnTop', 'orderServiceBtnSchedule'];
+  openBtns.forEach(function(id) {
+    var btn = document.getElementById(id);
+    if (btn) btn.addEventListener('click', openModal);
+  });
+  
+  // Кнопки закрытия
+  var closeBtn = document.getElementById('closeServiceModalBtn');
+  var cancelBtn = document.getElementById('cancelServiceBtn');
+  if (closeBtn) closeBtn.addEventListener('click', closeModal);
+  if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+  
+  // Закрытие по клику на фон
+  modal.addEventListener('click', function(e) {
+    if (e.target === modal) closeModal();
+  });
+  
+  // Отправка формы
+  form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    var formData = new FormData(this);
+    var data = {};
+    formData.forEach(function(v, k) { data[k] = v; });
+    
+    try {
+      var res = await fetch('/client/service-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': data._csrf },
+        body: JSON.stringify(data)
+      });
+      var result = await res.json();
+      if (result.success) {
+        alert('Заявка отправлена! Мы свяжемся с вами в ближайшее время.');
+        closeModal();
+        form.reset();
+      } else {
+        alert(result.message || 'Ошибка отправки');
+      }
+    } catch (err) {
+      alert('Ошибка сети');
+    }
+  });
+})();
+</script>

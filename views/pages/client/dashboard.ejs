@@ -1,0 +1,282 @@
+<%# views/pages/client/dashboard.ejs %>
+<% layout('layouts/default') %>
+<%
+  var u  = typeof user !== 'undefined' ? user : {};
+  var ip = typeof installedProposal !== 'undefined' ? installedProposal : null;
+  var proposals = typeof proposalsList !== 'undefined' ? proposalsList : [];
+  var mgr = typeof manager !== 'undefined' ? manager : null;
+  var fmt = function(n){ return (Number(n)||0).toLocaleString('ru-RU'); };
+
+  var statusNames  = {
+    sent:'Новое', viewed:'Просмотрено',
+    accepted:'Принято', accepted_premium:'Принято (премиум)',
+    in_progress:'Монтируется', installed:'Установлено',
+    rejected:'Отклонено'
+  };
+  var statusColors = {
+    sent:'bg-blue-100 text-blue-700', viewed:'bg-purple-100 text-purple-700',
+    accepted:'bg-green-100 text-green-700', accepted_premium:'bg-amber-100 text-amber-800',
+    in_progress:'bg-indigo-100 text-indigo-700', installed:'bg-emerald-100 text-emerald-700',
+    rejected:'bg-red-100 text-red-700'
+  };
+%>
+
+<div class="p-4 md:p-6 max-w-5xl mx-auto space-y-5">
+
+  <!-- Приветствие -->
+  <div class="flex items-center justify-between flex-wrap gap-3">
+    <div>
+      <h1 class="text-2xl font-black text-gray-900">Добро пожаловать, <%= u.name||'Клиент' %>!</h1>
+      <p class="text-sm text-gray-400 mt-0.5">Личный кабинет · Система водоочистки Нова Фильтр</p>
+    </div>
+    <% if(u.discount>0){ %>
+    <div class="px-4 py-2 rounded-xl text-white text-sm font-bold" style="background:#111827">
+      Ваша скидка <%= u.discount %>%
+    </div>
+    <% } %>
+  </div>
+
+  <!-- ══ УСТАНОВЛЕННАЯ СИСТЕМА (из КП со статусом installed) ══ -->
+  <% if(ip){ %>
+  <%
+    var eqItems   = ip.acceptedVariant==='premium' ? (ip.premiumItems||[]) : (ip.items||[]);
+    var totalAmt  = ip.acceptedAmount || ip.totalPrice || 0;
+    var warrantyEq   = ip.warrantyEquipment   || 24;
+    var warrantyInst = ip.warrantyInstallation || 24;
+    var installedDate = ip.installedAt ? new Date(ip.installedAt) : null;
+    // Гарантия истекает через warrantyEq месяцев
+    var warrantyUntil = null;
+    if(installedDate){ warrantyUntil = new Date(installedDate); warrantyUntil.setMonth(warrantyUntil.getMonth()+warrantyEq); }
+    var nextService = null;
+    if(installedDate){ nextService = new Date(installedDate); nextService.setMonth(nextService.getMonth()+12); }
+  %>
+  <div class="rounded-2xl overflow-hidden border border-gray-200" style="background:#fff">
+    <!-- Шапка системы -->
+    <div class="px-5 py-4 flex items-center justify-between" style="background:linear-gradient(135deg,#111827,#374151)">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+          <i data-lucide="droplets" class="w-6 h-6 text-white"></i>
+        </div>
+        <div>
+          <div class="text-white font-bold text-base">Ваша система водоочистки</div>
+          <div class="text-xs opacity-60 text-white">КП № <%= ip.proposalNumber %> · <%= ip.acceptedVariant==='premium'?'👑 Премиум вариант':'Стандартный вариант' %></div>
+        </div>
+      </div>
+      <span class="px-3 py-1 bg-emerald-400/20 text-emerald-300 rounded-full text-xs font-bold border border-emerald-400/30">
+        ✓ Установлена
+      </span>
+    </div>
+
+    <div class="p-5 space-y-4">
+      <!-- Ключевые данные -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="bg-gray-50 rounded-xl p-3">
+          <div class="text-xs text-gray-400 font-medium mb-1">Установлена</div>
+          <div class="font-bold text-gray-900 text-sm"><%= installedDate?installedDate.toLocaleDateString('ru-RU'):'—' %></div>
+        </div>
+        <div class="bg-gray-50 rounded-xl p-3">
+          <div class="text-xs text-gray-400 font-medium mb-1">Гарантия до</div>
+          <div class="font-bold text-gray-900 text-sm"><%= warrantyUntil?warrantyUntil.toLocaleDateString('ru-RU'):'—' %></div>
+        </div>
+        <div class="bg-gray-50 rounded-xl p-3">
+          <div class="text-xs text-gray-400 font-medium mb-1">Следующее ТО</div>
+          <div class="font-bold text-gray-900 text-sm"><%= nextService?nextService.toLocaleDateString('ru-RU'):'—' %></div>
+        </div>
+        <div class="bg-gray-50 rounded-xl p-3">
+          <div class="text-xs text-gray-400 font-medium mb-1">Стоимость системы</div>
+          <div class="font-bold text-gray-900 text-sm"><%= fmt(totalAmt) %> ₽</div>
+        </div>
+      </div>
+
+      <!-- Состав оборудования -->
+      <% if(eqItems.length>0){ %>
+      <div>
+        <div class="text-xs font-bold uppercase tracking-wide text-gray-400 mb-2">Состав вашей системы</div>
+        <div class="border border-gray-100 rounded-xl overflow-hidden">
+          <% eqItems.forEach(function(item,i){ %>
+          <div class="flex items-start gap-3 px-4 py-3 <%= i%2===0?'bg-white':'bg-gray-50/50' %> border-b border-gray-100 last:border-0">
+            <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black text-white flex-shrink-0 mt-0.5" style="background:#111827"><%= i+1 %></div>
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-gray-900 text-sm"><%= item.name %></div>
+              <% if(item.description){ %><div class="text-xs text-gray-400 mt-0.5"><%= item.description %></div><% } %>
+            </div>
+            <% if(item.sku){ %><div class="text-xs text-gray-400 flex-shrink-0">Арт.: <%= item.sku %></div><% } %>
+          </div>
+          <% }); %>
+        </div>
+      </div>
+      <% } %>
+
+      <!-- Документы на оборудование -->
+      <div>
+        <div class="text-xs font-bold uppercase tracking-wide text-gray-400 mb-2">Документы</div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <% [
+            {icon:'file-text',    label:'Инструкция',          href:'/client/docs'},
+            {icon:'shield-check', label:'Гарантийный талон',   href:'/client/docs'},
+            {icon:'clipboard',    label:'Акт выполненных работ',href:'/client/docs'}
+          ].forEach(function(d){ %>
+          <a href="<%= d.href %>" class="flex items-center gap-2 px-3 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700">
+            <i data-lucide="<%= d.icon %>" class="w-4 h-4 text-gray-400 flex-shrink-0"></i>
+            <%= d.label %>
+          </a>
+          <% }); %>
+        </div>
+      </div>
+
+      <!-- Периодичность обслуживания -->
+      <div class="bg-blue-50 border border-blue-100 rounded-xl p-4">
+        <div class="text-xs font-bold uppercase tracking-wide text-blue-600 mb-3">📅 Периодичность обслуживания</div>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <% [
+            ['Замена сорбентов','1 раз в 2 года'],
+            ['Замена смолы','1 раз в 5–7 лет'],
+            ['Таблетированная соль','~1 мешок в месяц'],
+            ['Плановое ТО','1 раз в год']
+          ].forEach(function(r){ %>
+          <div class="flex justify-between py-1.5 border-b border-blue-100 last:border-0">
+            <span class="text-blue-700"><%= r[0] %></span>
+            <span class="font-semibold text-blue-900"><%= r[1] %></span>
+          </div>
+          <% }); %>
+        </div>
+        <button onclick="document.getElementById('serviceModal').style.display='flex'"
+          class="mt-3 w-full py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition">
+          Заказать обслуживание
+        </button>
+      </div>
+
+      <% if(ip.installNotes){ %>
+      <div class="bg-gray-50 rounded-xl p-3 text-sm text-gray-600">
+        <span class="font-semibold text-gray-700">Примечания монтажника:</span> <%= ip.installNotes %>
+      </div>
+      <% } %>
+    </div>
+  </div>
+  <% } else { %>
+
+  <!-- Нет установленной системы -->
+  <div class="rounded-2xl border border-dashed border-gray-300 p-8 text-center">
+    <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+      <i data-lucide="droplets" class="w-8 h-8 text-gray-400"></i>
+    </div>
+    <h2 class="text-lg font-bold text-gray-700 mb-1">Система водоочистки не установлена</h2>
+    <p class="text-sm text-gray-400 mb-5">Свяжитесь с нашим менеджером для получения коммерческого предложения</p>
+    <a href="tel:<%= typeof companyInfo !== 'undefined' && companyInfo.phone || '8 966-199-97-63' %>"
+       class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-semibold" style="background:#111827">
+      <i data-lucide="phone" class="w-4 h-4"></i> Позвонить менеджеру
+    </a>
+  </div>
+  <% } %>
+
+  <!-- ══ КП и менеджер ══ -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+    <!-- Коммерческие предложения -->
+    <% if(proposals.length > 0){ %>
+    <div class="md:col-span-2 bg-white rounded-2xl border border-gray-200 overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h2 class="font-bold text-gray-900 text-sm flex items-center gap-2">
+          <i data-lucide="file-check" class="w-4 h-4 text-gray-500"></i> Коммерческие предложения
+        </h2>
+      </div>
+      <div class="divide-y divide-gray-100">
+        <% proposals.forEach(function(p){ %>
+        <a href="/admin/proposals/<%= p._id %>"
+           class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
+          <div class="flex-1 min-w-0">
+            <div class="font-semibold text-sm text-gray-900"><%= p.proposalNumber %></div>
+            <div class="text-xs text-gray-400"><%= p.createdAt?new Date(p.createdAt).toLocaleDateString('ru-RU'):'—' %></div>
+          </div>
+          <div class="text-sm font-bold text-gray-900 flex-shrink-0">
+            <%= fmt(p.acceptedAmount||p.totalPrice||0) %> ₽
+          </div>
+          <span class="px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 <%= statusColors[p.status]||'bg-gray-100 text-gray-600' %>">
+            <%= statusNames[p.status]||p.status %>
+          </span>
+        </a>
+        <% }); %>
+      </div>
+    </div>
+    <% } %>
+
+    <!-- Менеджер -->
+    <% if(mgr){ %>
+    <div class="bg-white rounded-2xl border border-gray-200 p-5">
+      <h2 class="font-bold text-gray-900 text-sm mb-4 flex items-center gap-2">
+        <i data-lucide="user" class="w-4 h-4 text-gray-500"></i> Ваш менеджер
+      </h2>
+      <div class="flex items-center gap-3 mb-4">
+        <% if(mgr.avatar){ %>
+        <img src="<%= mgr.avatar %>" class="w-12 h-12 rounded-full object-cover border border-gray-200" alt="">
+        <% } else { %>
+        <div class="w-12 h-12 rounded-full flex items-center justify-center text-lg font-black text-white flex-shrink-0" style="background:#111827">
+          <%= (mgr.name||'М').charAt(0).toUpperCase() %>
+        </div>
+        <% } %>
+        <div>
+          <div class="font-bold text-gray-900"><%= mgr.name %></div>
+          <div class="text-xs text-gray-400">Персональный менеджер</div>
+        </div>
+      </div>
+      <div class="space-y-2">
+        <% if(mgr.phone){ %>
+        <a href="tel:<%= mgr.phone %>" class="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg text-sm font-medium hover:bg-gray-100 transition">
+          <i data-lucide="phone" class="w-4 h-4 text-gray-500"></i> <%= mgr.phone %>
+        </a>
+        <% } %>
+        <% if(mgr.email){ %>
+        <a href="mailto:<%= mgr.email %>" class="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition truncate">
+          <i data-lucide="mail" class="w-4 h-4 text-gray-500 flex-shrink-0"></i>
+          <span class="truncate"><%= mgr.email %></span>
+        </a>
+        <% } %>
+      </div>
+    </div>
+    <% } %>
+
+  </div>
+</div>
+
+<!-- Модалка обслуживания -->
+<div id="serviceModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-md">
+    <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+      <h3 class="font-bold text-gray-900">Заявка на обслуживание</h3>
+      <button onclick="document.getElementById('serviceModal').style.display='none'"
+        class="p-1 text-gray-400 hover:text-gray-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <form class="p-5 space-y-4" onsubmit="submitService(event)">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">Тип обслуживания</label>
+        <select name="serviceType" required class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm">
+          <option value="maintenance">Плановое ТО</option>
+          <option value="filter_change">Замена фильтра</option>
+          <option value="salt_refill">Дозаправка соли</option>
+          <option value="repair">Ремонт</option>
+          <option value="other">Другое</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">Удобная дата</label>
+        <input type="date" name="preferredDate" class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">Комментарий</label>
+        <textarea name="comment" rows="2" placeholder="Опишите проблему..." class="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm resize-none"></textarea>
+      </div>
+      <button type="submit" class="w-full py-2.5 text-white rounded-xl text-sm font-semibold" style="background:#111827">
+        Отправить заявку
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+function submitService(e){
+  e.preventDefault();
+  alert('Заявка принята! Мы свяжемся с вами в ближайшее время.');
+  document.getElementById('serviceModal').style.display='none';
+}
+</script>

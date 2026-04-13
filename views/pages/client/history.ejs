@@ -1,0 +1,153 @@
+<%# views/pages/client/history.ejs %>
+<% layout('layouts/default') %>
+<%
+  var reqs = typeof serviceRequests !== 'undefined' ? serviceRequests : [];
+  var props = typeof proposals !== 'undefined' ? proposals : [];
+  var fmt = function(n){ return (Number(n)||0).toLocaleString('ru-RU'); };
+  var fmtDate = function(d){ return d ? new Date(d).toLocaleDateString('ru-RU') : '—'; };
+
+  var statusNames = {
+    draft:'Черновик', sent:'Отправлено', viewed:'Просмотрено',
+    accepted:'Принято', accepted_premium:'Принято (премиум)',
+    in_progress:'В работе', installed:'Установлено',
+    rejected:'Отклонено', expired:'Истекло'
+  };
+  var statusColors = {
+    draft:'bg-gray-100 text-gray-600', sent:'bg-blue-100 text-blue-700', viewed:'bg-purple-100 text-purple-700',
+    accepted:'bg-green-100 text-green-700', accepted_premium:'bg-amber-100 text-amber-800',
+    in_progress:'bg-indigo-100 text-indigo-700', installed:'bg-emerald-100 text-emerald-700',
+    rejected:'bg-red-100 text-red-700', expired:'bg-gray-100 text-gray-500'
+  };
+  var reqStatusNames = { new:'Новая', in_progress:'В работе', completed:'Выполнена', cancelled:'Отменена' };
+  var reqStatusColors = { new:'bg-blue-100 text-blue-700', in_progress:'bg-yellow-100 text-yellow-700', completed:'bg-green-100 text-green-700', cancelled:'bg-gray-100 text-gray-500' };
+  var typeNames = { maintenance:'Плановое ТО', refill:'Перезасыпка', repair:'Ремонт', analysis:'Анализ воды', other:'Другое',
+                    installation:'Установка' };
+  var typeIcons = { maintenance:'wrench', refill:'refresh-cw', repair:'tool', analysis:'flask-conical', other:'help-circle',
+                    installation:'home' };
+%>
+
+<div class="p-4 md:p-6 max-w-5xl mx-auto space-y-6">
+
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">История</h1>
+    <p class="text-sm text-gray-500 mt-1">Коммерческие предложения и заявки на обслуживание</p>
+  </div>
+
+  <!-- Табы -->
+  <div class="border-b border-gray-200">
+    <nav class="flex gap-4 -mb-px" id="histTabs">
+      <button type="button" data-tab="proposals" class="hist-tab px-4 py-3 text-sm font-medium border-b-2 border-blue-500 text-blue-600">
+        КП <span class="ml-1 bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs"><%= props.length %></span>
+      </button>
+      <button type="button" data-tab="services" class="hist-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+        Заявки <span class="ml-1 bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs"><%= reqs.length %></span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Таб: КП -->
+  <div id="tab-proposals" class="space-y-3">
+    <% if(props.length === 0){ %>
+    <div class="bg-white rounded-xl shadow-sm border p-10 text-center">
+      <i data-lucide="file-text" class="w-12 h-12 mx-auto text-gray-300 mb-3"></i>
+      <p class="text-gray-500">Коммерческих предложений пока нет</p>
+    </div>
+    <% } else { props.forEach(function(p){ %>
+    <div class="bg-white rounded-xl shadow-sm border hover:shadow-md transition">
+      <div class="p-4 flex items-center gap-4">
+        <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+          <i data-lucide="<%= typeIcons[p.proposalType] || 'file-text' %>" class="w-5 h-5 text-blue-600"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="font-semibold text-gray-900"><%= p.proposalNumber %></span>
+            <span class="text-xs px-2 py-0.5 rounded-full font-medium <%= statusColors[p.status] || 'bg-gray-100 text-gray-600' %>">
+              <%= statusNames[p.status] || p.status %>
+            </span>
+            <span class="text-xs text-gray-400"><%= typeNames[p.proposalType] || 'Установка' %></span>
+          </div>
+          <div class="flex items-center gap-4 mt-1 text-sm text-gray-500">
+            <span><%= fmtDate(p.createdAt) %></span>
+            <span class="font-medium text-gray-900"><%= fmt(p.acceptedAmount || p.totalPrice) %> ₽</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <% if(['sent','viewed'].includes(p.status)){ %>
+            <a href="/client/proposals/<%= p._id %>" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
+              Просмотреть
+            </a>
+          <% } else { %>
+            <a href="/client/proposals/<%= p._id %>" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">
+              Открыть
+            </a>
+          <% } %>
+        </div>
+      </div>
+      <% if(p.installedAt){ %>
+      <div class="px-4 pb-3 flex items-center gap-2 text-xs text-emerald-600">
+        <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+        Установлено <%= fmtDate(p.installedAt) %>
+      </div>
+      <% } %>
+    </div>
+    <% }) } %>
+  </div>
+
+  <!-- Таб: Заявки -->
+  <div id="tab-services" class="space-y-3 hidden">
+    <% if(reqs.length === 0){ %>
+    <div class="bg-white rounded-xl shadow-sm border p-10 text-center">
+      <i data-lucide="inbox" class="w-12 h-12 mx-auto text-gray-300 mb-3"></i>
+      <p class="text-gray-500">Заявок на обслуживание пока нет</p>
+      <a href="/client/system" class="inline-block mt-4 px-5 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">
+        Оставить заявку
+      </a>
+    </div>
+    <% } else { reqs.forEach(function(r){ %>
+    <div class="bg-white rounded-xl shadow-sm border">
+      <div class="p-4 flex items-center gap-4">
+        <div class="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center flex-shrink-0">
+          <i data-lucide="<%= typeIcons[r.serviceType] || 'wrench' %>" class="w-5 h-5 text-orange-600"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="font-semibold text-gray-900"><%= typeNames[r.serviceType] || r.serviceType %></span>
+            <span class="text-xs px-2 py-0.5 rounded-full font-medium <%= reqStatusColors[r.status] || 'bg-gray-100' %>">
+              <%= reqStatusNames[r.status] || r.status %>
+            </span>
+          </div>
+          <div class="text-sm text-gray-500 mt-1">
+            <span>Создана: <%= fmtDate(r.createdAt) %></span>
+            <% if(r.preferredDate){ %> · Желаемая дата: <b><%= fmtDate(r.preferredDate) %></b><% } %>
+          </div>
+          <% if(r.comment){ %>
+            <p class="text-sm text-gray-600 mt-1 line-clamp-2"><%= r.comment %></p>
+          <% } %>
+          <% if(r.resolvedComment){ %>
+            <p class="text-sm text-green-700 mt-1 bg-green-50 rounded-lg px-3 py-1.5">
+              <b>Ответ:</b> <%= r.resolvedComment %>
+            </p>
+          <% } %>
+        </div>
+      </div>
+    </div>
+    <% }) } %>
+  </div>
+
+</div>
+
+<script>
+document.querySelectorAll('.hist-tab').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    var tab = this.dataset.tab;
+    document.querySelectorAll('.hist-tab').forEach(function(b){
+      b.classList.remove('border-blue-500','text-blue-600');
+      b.classList.add('border-transparent','text-gray-500');
+    });
+    this.classList.add('border-blue-500','text-blue-600');
+    this.classList.remove('border-transparent','text-gray-500');
+    document.getElementById('tab-proposals').classList.toggle('hidden', tab !== 'proposals');
+    document.getElementById('tab-services').classList.toggle('hidden', tab !== 'services');
+  });
+});
+</script>

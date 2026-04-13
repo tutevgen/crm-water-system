@@ -1,0 +1,335 @@
+<script>
+(function(){
+  'use strict';
+
+  var totalSteps = <%= totalSteps %>;
+  var isInstallation = <%= isInstallation %>;
+
+  // FIX #33: безопасная загрузка продуктов — через data-атрибут, не <%- %>
+  // Данные уже записаны в DOM ниже в div#products-data
+  var products = [];
+  try {
+    var _pd = document.getElementById('products-data');
+    if (_pd) products = JSON.parse(_pd.textContent || '[]');
+  } catch(e) { products = []; }
+
+  var step = 1;
+  var clientDiscount = 0;
+  var pipingPrice = 8000;
+  var selectedPhotos = [];
+
+  // FIX #47: функция экранирования HTML — защита от XSS
+  function esc(s) {
+    return String(s || '')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  function fmt(n) { return (n || 0).toLocaleString('ru-RU'); }
+
+  function showStep(n) {
+    if (n < 1 || n > totalSteps) return;
+    step = n;
+    for (var i = 1; i <= totalSteps; i++) {
+      var el = document.getElementById('step' + i);
+      var item = document.querySelector('.step-item[data-step="' + i + '"]');
+      if (el) el.classList.toggle('active', i === n);
+      if (item) {
+        item.classList.remove('active', 'done');
+        if (i === n) item.classList.add('active');
+        if (i < n) item.classList.add('done');
+      }
+    }
+    document.getElementById('btnPrev')?.classList.toggle('hidden', n === 1);
+    document.getElementById('btnNext')?.classList.toggle('hidden', n === totalSteps);
+    document.getElementById('btnSubmit')?.classList.toggle('hidden', n !== totalSteps);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    recalculate();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+
+  function toggleClientType(type) {
+    document.getElementById('existingClientSection')?.classList.toggle('hidden', type === 'new');
+    document.getElementById('newClientSection')?.classList.toggle('hidden', type !== 'new');
+  }
+
+  function filterClients() {
+    var q = (document.getElementById('clientSearch')?.value || '').toLowerCase();
+    document.querySelectorAll('.client-option').forEach(function(el) {
+      el.classList.toggle('hidden',
+        !(el.dataset.name || '').includes(q) && !(el.dataset.phone || '').includes(q));
+    });
+  }
+
+  function selectClient(el) {
+    document.querySelectorAll('.client-option').forEach(function(c) {
+      c.classList.remove('selected', 'bg-blue-50', 'border-blue-300');
+    });
+    el.classList.add('selected', 'bg-blue-50', 'border-blue-300');
+    var radio = el.querySelector('input[type="radio"]');
+    if (radio) {
+      radio.checked = true;
+      clientDiscount = parseFloat(radio.dataset.discount) || 0;
+      document.getElementById('clientDiscountInput').value = clientDiscount;
+      var d = document.getElementById('clientDiscountDisplay');
+      if (d) d.textContent = clientDiscount;
+    }
+    recalculate();
+  }
+
+  function getProductImage(p) {
+    return p.image || (p.images && p.images[0]) || p.mainImage || '';
+  }
+
+  function addItem(data) {
+    data = data || {};
+    var container = document.getElementById('itemsContainer');
+    if (!container) return;
+
+    // FIX #47: экранируем все пользовательские данные
+    var imgSrc = esc(getProductImage(data) || data.image || '');
+    var imgHtml = imgSrc
+      ? '<img src="' + imgSrc + '" class="w-full h-full object-contain">'
+      : '<i data-lucide="package" class="w-5 h-5 text-gray-400"></i>';
+
+    var html =
+      '<div class="item-row border rounded-lg p-4">' +
+        '<div class="flex items-start gap-3">' +
+          '<span class="item-number w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center text-sm font-medium">' +
+            (container.children.length + 1) +
+          '</span>' +
+          '<div class="w-12 h-12 bg-gray-50 rounded-lg border flex items-center justify-center overflow-hidden flex-shrink-0">' + imgHtml + '</div>' +
+          '<div class="flex-1 grid grid-cols-1 md:grid-cols-4 gap-3">' +
+            '<div class="md:col-span-2">' +
+              '<input type="text" name="items[][name]" value="' + esc(data.name) + '" placeholder="Наименование" class="w-full px-3 py-2 border rounded-lg text-sm" required>' +
+              '<input type="hidden" name="items[][productId]" value="' + esc(data.productId) + '">' +
+              '<input type="hidden" name="items[][sku]" value="' + esc(data.sku) + '">' +
+              '<input type="hidden" name="items[][image]" value="' + esc(data.image) + '">' +
+            '</div>' +
+            '<div><input type="number" name="items[][quantity]" value="' + (parseInt(data.quantity) || 1) + '" min="1" class="w-full px-3 py-2 border rounded-lg text-sm text-center item-qty"></div>' +
+            '<div><input type="number" name="items[][price]" value="' + (parseFloat(data.price) || 0) + '" min="0" class="w-full px-3 py-2 border rounded-lg text-sm text-right item-price"></div>' +
+          '</div>' +
+          '<button type="button" class="item-remove p-2 text-red-500 hover:bg-red-50 rounded-lg flex-shrink-0">' +
+            '<i data-lucide="trash-2" class="w-4 h-4"></i>' +
+          '</button>' +
+        '</div>' +
+      '</div>';
+
+    container.insertAdjacentHTML('beforeend', html);
+    var row = container.lastElementChild;
+    row.querySelector('.item-remove').onclick = function() { row.remove(); renumberItems(); recalculate(); };
+    row.querySelector('.item-qty').oninput = recalculate;
+    row.querySelector('.item-price').oninput = recalculate;
+    recalculate();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+
+  function renumberItems() {
+    document.querySelectorAll('.item-row').forEach(function(row, idx) {
+      var num = row.querySelector('.item-number');
+      if (num) num.textContent = idx + 1;
+    });
+  }
+
+  function openCatalog() {
+    document.getElementById('catalogModal').classList.add('active');
+    renderCatalog(products);
+  }
+  function closeCatalog() { document.getElementById('catalogModal').classList.remove('active'); }
+
+  function filterCatalog() {
+    var q = (document.getElementById('catalogSearch')?.value || '').toLowerCase();
+    renderCatalog(products.filter(function(p) {
+      return (p.name || '').toLowerCase().includes(q) || (p.sku || '').toLowerCase().includes(q);
+    }));
+  }
+
+  // FIX #47: renderCatalog — экранируем p.name и p.sku через esc()
+  function renderCatalog(list) {
+    var grid = document.getElementById('catalogGrid');
+    if (!list.length) {
+      grid.innerHTML = '<div class="col-span-4 text-center py-12 text-gray-500">Товары не найдены</div>';
+      return;
+    }
+    grid.innerHTML = list.map(function(p) {
+      var img = getProductImage(p);
+      var imgHtml = img
+        ? '<img src="' + esc(img) + '" class="max-h-full max-w-full object-contain">'
+        : '<span class="text-gray-300 text-2xl">📦</span>';
+      return '<div class="product-item p-3 border rounded-lg text-center cursor-pointer hover:border-blue-300 hover:shadow-sm" data-id="' + esc(p._id) + '">' +
+        '<div class="h-16 flex items-center justify-center mb-2">' + imgHtml + '</div>' +
+        '<div class="font-medium text-sm truncate">' + esc(p.name) + '</div>' +
+        '<div class="text-xs text-gray-500">' + esc(p.sku) + '</div>' +
+        '<div class="text-blue-600 font-semibold mt-1">' + fmt(p.price) + ' ₽</div>' +
+      '</div>';
+    }).join('');
+
+    grid.querySelectorAll('.product-item').forEach(function(el) {
+      el.onclick = function() {
+        var p = products.find(function(x) { return x._id === el.dataset.id; });
+        if (p) addItem({ productId: p._id, name: p.name, sku: p.sku, price: p.price, image: getProductImage(p), quantity: 1 });
+        closeCatalog();
+      };
+    });
+  }
+
+  function updatePiping() {
+    var checked = document.querySelector('input[name="pipingMaterial"]:checked');
+    if (checked) {
+      var priceInput = checked.closest('label')?.querySelector('.piping-price');
+      pipingPrice = priceInput ? parseFloat(priceInput.value) || 0 : parseFloat(checked.dataset.price) || 0;
+      var h = document.getElementById('pipingPriceInput');
+      if (h) h.value = pipingPrice;
+    }
+    recalculate();
+  }
+
+  function recalculate() {
+    var eqTotal = 0;
+    document.querySelectorAll('.item-row').forEach(function(row) {
+      var qty = parseFloat(row.querySelector('.item-qty')?.value) || 0;
+      var price = parseFloat(row.querySelector('.item-price')?.value) || 0;
+      eqTotal += qty * price;
+    });
+    var svcTotal = 0;
+    document.querySelectorAll('.service-cb:checked').forEach(function(cb) {
+      var p = cb.closest('label')?.querySelector('.service-price');
+      if (p) svcTotal += parseFloat(p.value) || 0;
+    });
+    var subtotal = eqTotal + svcTotal + (isInstallation ? pipingPrice : 0);
+    var discInput = document.getElementById('discountInput') || document.getElementById('discountInputFinal');
+    var discPct = discInput ? parseFloat(discInput.value) || 0 : 0;
+    var clientDiscAmt = subtotal * clientDiscount / 100;
+    var addDiscAmt = (subtotal - clientDiscAmt) * discPct / 100;
+    var total = subtotal - clientDiscAmt - addDiscAmt;
+    var u = {
+      'equipmentTotal': fmt(eqTotal) + ' ₽', 'servicesTotal': fmt(svcTotal) + ' ₽',
+      'pipingTotal': fmt(pipingPrice) + ' ₽', 'subtotal': fmt(subtotal) + ' ₽',
+      'sumSubtotal': fmt(subtotal) + ' ₽', 'grandTotal': fmt(total) + ' ₽',
+      'sumEq': fmt(eqTotal) + ' ₽', 'sumSv': fmt(svcTotal) + ' ₽',
+      'sumPip': fmt(pipingPrice) + ' ₽', 'sumTot': fmt(total) + ' ₽',
+      'sumDisc': '-' + fmt(clientDiscAmt + addDiscAmt) + ' ₽',
+      'clientDiscountAmount': '-' + fmt(clientDiscAmt) + ' ₽',
+      'discountAmount': '-' + fmt(addDiscAmt) + ' ₽'
+    };
+    Object.keys(u).forEach(function(id) { var el = document.getElementById(id); if (el) el.textContent = u[id]; });
+    document.getElementById('discRow')?.classList.toggle('hidden', (clientDiscAmt + addDiscAmt) === 0);
+    document.getElementById('clientDiscountRow')?.classList.toggle('hidden', clientDiscAmt === 0);
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    // Nav
+    document.getElementById('btnNext')?.addEventListener('click', function(e) { e.preventDefault(); showStep(step + 1); });
+    document.getElementById('btnPrev')?.addEventListener('click', function(e) { e.preventDefault(); showStep(step - 1); });
+    document.querySelectorAll('.step-item').forEach(function(item) {
+      item.style.cursor = 'pointer';
+      item.addEventListener('click', function() { showStep(parseInt(item.dataset.step)); });
+    });
+    // Client
+    document.querySelectorAll('input[name="clientType"]').forEach(function(r) {
+      r.addEventListener('change', function() { toggleClientType(r.value); });
+    });
+    document.getElementById('clientSearch')?.addEventListener('input', filterClients);
+    document.querySelectorAll('.client-option').forEach(function(el) {
+      el.addEventListener('click', function() { selectClient(el); });
+    });
+    // Catalog
+    document.getElementById('openCatalogBtn')?.addEventListener('click', function(e) { e.preventDefault(); openCatalog(); });
+    document.querySelectorAll('.modal-close').forEach(function(el) {
+      el.addEventListener('click', function(e) { e.preventDefault(); closeCatalog(); });
+    });
+    document.getElementById('catalogModal')?.addEventListener('click', function(e) {
+      if (e.target.id === 'catalogModal') closeCatalog();
+    });
+    document.getElementById('catalogSearch')?.addEventListener('input', filterCatalog);
+    document.getElementById('addItemBtn')?.addEventListener('click', function(e) { e.preventDefault(); addItem({}); });
+    // Piping & services
+    document.querySelectorAll('input[name="pipingMaterial"]').forEach(function(r) { r.addEventListener('change', updatePiping); });
+    document.querySelectorAll('.piping-price').forEach(function(p) { p.addEventListener('input', updatePiping); });
+    document.querySelectorAll('.service-cb, .service-price').forEach(function(el) {
+      el.addEventListener('input', recalculate);
+      el.addEventListener('change', recalculate);
+    });
+    document.querySelectorAll('#discountInput, #discountInputFinal').forEach(function(inp) {
+      inp?.addEventListener('input', recalculate);
+    });
+    // Analysis
+    document.querySelectorAll('.analysis-input').forEach(function(inp) {
+      inp.addEventListener('input', function() {
+        var card = inp.closest('.analysis-card');
+        if (card && inp.dataset.norm) card.classList.toggle('exceeded', parseFloat(inp.value) > parseFloat(inp.dataset.norm));
+      });
+    });
+    // Schema upload
+    var schemaArea = document.getElementById('schemaUploadArea');
+    var schemaInput = document.getElementById('schemaInput');
+    if (schemaArea && schemaInput) {
+      schemaArea.addEventListener('click', function(e) { e.preventDefault(); schemaInput.click(); });
+      schemaInput.addEventListener('change', function() {
+        if (!schemaInput.files[0]) return;
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          var preview = document.getElementById('schemaPreview');
+          if (preview) { preview.innerHTML = '<img src="' + e.target.result + '" class="max-h-48 rounded-lg mx-auto">'; preview.classList.remove('hidden'); }
+          document.querySelectorAll('.scheme-thumb').forEach(function(t) { t.classList.remove('selected','ring-2','ring-blue-500'); });
+          var h = document.getElementById('schemaImageHidden'); if (h) h.value = '';
+        };
+        reader.readAsDataURL(schemaInput.files[0]);
+      });
+    }
+    // Photos upload
+    var photosArea = document.getElementById('photosUploadArea');
+    var photosInput = document.getElementById('workPhotosInput');
+    if (photosArea && photosInput) {
+      photosArea.addEventListener('click', function(e) { e.preventDefault(); photosInput.click(); });
+      photosInput.addEventListener('change', function() {
+        var preview = document.getElementById('workPhotosPreview');
+        if (!preview) return;
+        preview.innerHTML = '';
+        Array.from(photosInput.files).slice(0, 5).forEach(function(file) {
+          var reader = new FileReader();
+          reader.onload = function(e) { preview.innerHTML += '<img src="' + e.target.result + '" class="w-20 h-20 object-cover rounded-lg border">'; };
+          reader.readAsDataURL(file);
+        });
+      });
+    }
+    // Scheme gallery
+    document.querySelectorAll('.scheme-thumb').forEach(function(t) {
+      t.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.querySelectorAll('.scheme-thumb').forEach(function(x) { x.classList.remove('selected','ring-2','ring-blue-500'); });
+        t.classList.add('selected','ring-2','ring-blue-500');
+        var h = document.getElementById('schemaImageHidden'); if (h) h.value = t.dataset.src;
+        var preview = document.getElementById('schemaPreview');
+        if (preview) { preview.innerHTML = '<img src="' + esc(t.dataset.src) + '" class="max-h-48 rounded-lg mx-auto">'; preview.classList.remove('hidden'); }
+      });
+    });
+    // Photos gallery
+    document.querySelectorAll('.photo-thumb').forEach(function(t) {
+      t.addEventListener('click', function(e) {
+        e.preventDefault();
+        var src = t.dataset.src;
+        var idx = selectedPhotos.indexOf(src);
+        if (idx > -1) { selectedPhotos.splice(idx, 1); t.classList.remove('selected','ring-2','ring-blue-500'); }
+        else if (selectedPhotos.length < 5) { selectedPhotos.push(src); t.classList.add('selected','ring-2','ring-blue-500'); }
+        else { alert('Максимум 5 фото'); return; }
+        document.querySelectorAll('input[name="workPhotos[]"]').forEach(function(el) { el.remove(); });
+        var form = document.getElementById('proposalForm');
+        selectedPhotos.forEach(function(s) {
+          var i = document.createElement('input'); i.type = 'hidden'; i.name = 'workPhotos[]'; i.value = s; form.appendChild(i);
+        });
+      });
+    });
+    // Submit
+    document.getElementById('btnSubmit')?.addEventListener('click', function(e) {
+      e.preventDefault();
+      if (document.querySelectorAll('.item-row').length === 0) { alert('Добавьте хотя бы одну позицию'); return; }
+      document.getElementById('proposalForm').submit();
+    });
+    // Init
+    if (document.getElementById('itemsContainer')?.children.length === 0) addItem({});
+    recalculate();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  });
+})();
+</script>

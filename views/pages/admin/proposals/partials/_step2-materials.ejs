@@ -1,0 +1,31 @@
+<div id="step2" class="step-content">
+  <div class="bg-white rounded-xl border shadow-sm p-6">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-lg font-semibold flex items-center gap-2">
+        <i data-lucide="package" class="w-5 h-5 text-blue-500"></i>
+        Материалы
+      </h2>
+      <div class="flex gap-2">
+        <button type="button" id="openCatalogBtn" 
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+          <i data-lucide="list" class="w-4 h-4"></i>
+          Каталог
+        </button>
+        <button type="button" id="addItemBtn"
+                class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          Вручную
+        </button>
+      </div>
+    </div>
+    
+    <div id="itemsContainer" class="space-y-3 min-h-[100px]"></div>
+    
+    <div class="flex justify-end mt-4 pt-4 border-t">
+      <div class="text-right">
+        <span class="text-sm text-gray-500">Итого материалы:</span>
+        <span id="equipmentTotal" class="ml-2 text-xl font-bold text-gray-900">0 ₽</span>
+      </div>
+    </div>
+  </div>
+</div>

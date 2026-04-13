@@ -1,0 +1,263 @@
+<%
+  var isInstall = (typeof isInstallation !== 'undefined') ? isInstallation : true;
+%>
+
+<div id="step6" class="step-content">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    
+    <!-- Основные условия -->
+    <div class="lg:col-span-2 space-y-6">
+      
+      <!-- Условия оплаты -->
+      <div class="bg-white rounded-xl border shadow-sm p-6">
+        <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+          <i data-lucide="credit-card" class="w-5 h-5 text-blue-500"></i>
+          Условия оплаты
+        </h3>
+        
+        <div class="space-y-3">
+          <label class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-all">
+            <input type="radio" name="paymentTerms" value="100_prepay" class="text-blue-600">
+            <div class="flex-1">
+              <div class="font-medium">100% предоплата</div>
+              <div class="text-sm text-gray-500">Полная оплата до начала работ</div>
+            </div>
+          </label>
+          
+          <label class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-all">
+            <input type="radio" name="paymentTerms" value="50_50" checked class="text-blue-600">
+            <div class="flex-1">
+              <div class="font-medium">50% / 50%</div>
+              <div class="text-sm text-gray-500">50% аванс, 50% после монтажа</div>
+            </div>
+          </label>
+          
+          <label class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-all">
+            <input type="radio" name="paymentTerms" value="30_70" class="text-blue-600">
+            <div class="flex-1">
+              <div class="font-medium">30% / 70%</div>
+              <div class="text-sm text-gray-500">30% аванс, 70% после монтажа</div>
+            </div>
+          </label>
+          
+          <label class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-all">
+            <input type="radio" name="paymentTerms" value="postpay" class="text-blue-600">
+            <div class="flex-1">
+              <div class="font-medium">Постоплата</div>
+              <div class="text-sm text-gray-500">Оплата по факту выполнения работ</div>
+            </div>
+          </label>
+          
+          <label class="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-all">
+            <input type="radio" name="paymentTerms" value="installment" class="text-blue-600">
+            <div class="flex-1">
+              <div class="font-medium">Рассрочка</div>
+              <div class="text-sm text-gray-500">Через банк-партнёр</div>
+            </div>
+          </label>
+        </div>
+      </div>
+      
+      <!-- Сроки -->
+      <div class="bg-white rounded-xl border shadow-sm p-6">
+        <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+          <i data-lucide="clock" class="w-5 h-5 text-blue-500"></i>
+          Сроки выполнения
+        </h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-2">Срок доставки</label>
+            <select name="deliveryTime" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+              <option value="1-2">1-2 рабочих дня</option>
+              <option value="3-5" selected>3-5 рабочих дней</option>
+              <option value="7-10">7-10 рабочих дней</option>
+            </select>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium mb-2">Срок монтажа</label>
+            <select name="installationTime" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+              <option value="1" selected>1 день</option>
+              <option value="2">1-2 дня</option>
+              <option value="3">2-3 дня</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Гарантии -->
+      <div class="bg-white rounded-xl border shadow-sm p-6">
+        <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+          <i data-lucide="shield-check" class="w-5 h-5 text-blue-500"></i>
+          Гарантийные обязательства
+        </h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-2">Гарантия на оборудование</label>
+            <div class="relative">
+              <input type="number" name="warrantyEquipment" value="24" min="0" max="120"
+                     class="w-full px-3 py-2 pr-16 border rounded-lg focus:ring-2 focus:ring-blue-500">
+              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">мес.</span>
+            </div>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium mb-2">Гарантия на монтаж</label>
+            <div class="relative">
+              <input type="number" name="warrantyInstallation" value="24" min="0" max="120"
+                     class="w-full px-3 py-2 pr-16 border rounded-lg focus:ring-2 focus:ring-blue-500">
+              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">мес.</span>
+            </div>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium mb-2">Гарантия на воду</label>
+            <div class="relative">
+              <input type="number" name="warrantyWater" value="12" min="0" max="60"
+                     class="w-full px-3 py-2 pr-16 border rounded-lg focus:ring-2 focus:ring-blue-500">
+              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">мес.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Что включено -->
+      <div class="bg-white rounded-xl border shadow-sm p-6">
+        <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+          <i data-lucide="check-circle" class="w-5 h-5 text-blue-500"></i>
+          Что включено в стоимость
+        </h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" name="includes[]" value="delivery" class="text-blue-600">
+            <span class="text-sm">Бесплатная доставка</span>
+          </label>
+          
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" name="includes[]" value="analysis" class="text-blue-600">
+            <span class="text-sm">Анализ воды после установки</span>
+          </label>
+          
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" name="includes[]" value="consumables" checked class="text-blue-600">
+            <span class="text-sm">Расходные материалы на 1 месяц</span>
+          </label>
+          
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" name="includes[]" value="first_service" class="text-blue-600">
+            <span class="text-sm">Первое ТО бесплатно</span>
+          </label>
+          
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" name="includes[]" value="training" class="text-blue-600">
+            <span class="text-sm">Обучение эксплуатации</span>
+          </label>
+        </div>
+      </div>
+      
+      <!-- Дополнительные примечания -->
+      <div class="bg-white rounded-xl border shadow-sm p-6">
+        <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+          <i data-lucide="file-text" class="w-5 h-5 text-blue-500"></i>
+          Дополнительные примечания
+        </h3>
+        
+        <textarea name="notes" rows="4" placeholder="Укажите особые условия, акции, дополнительную информацию..."
+                  class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+      </div>
+      
+    </div>
+    
+    <!-- Итоговая сводка -->
+    <div class="space-y-4">
+      
+      <!-- Срок действия -->
+      <div class="bg-white rounded-xl border shadow-sm p-6">
+        <h3 class="font-semibold mb-4 flex items-center gap-2">
+          <i data-lucide="calendar" class="w-5 h-5 text-blue-500"></i>
+          Срок действия КП
+        </h3>
+        
+        <div>
+          <label class="block text-sm font-medium mb-2">Действителен (дней)</label>
+          <input type="number" name="validDays" value="14" min="1" max="90"
+                 class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+        </div>
+      </div>
+      
+      <!-- Скидка -->
+      <div class="bg-white rounded-xl border shadow-sm p-6">
+        <h3 class="font-semibold mb-4 flex items-center gap-2">
+          <i data-lucide="percent" class="w-5 h-5 text-blue-500"></i>
+          Дополнительная скидка
+        </h3>
+        
+        <div>
+          <label class="block text-sm font-medium mb-2">Скидка менеджера (%)</label>
+          <input type="number" id="discountInputFinal" name="discount" value="0" min="0" max="50" step="1"
+                 class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+          <p class="text-xs text-gray-500 mt-1">Будет применена поверх клиентской скидки</p>
+        </div>
+        
+        <div id="clientDiscountRow" class="mt-3 pt-3 border-t hidden">
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-600">Скидка клиента:</span>
+            <span id="clientDiscountDisplay" class="font-medium">0</span>%
+          </div>
+        </div>
+      </div>
+      
+      <!-- Итоговая стоимость -->
+      <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200 p-6">
+        <h3 class="font-semibold mb-4 text-blue-900">Итоговая стоимость</h3>
+        
+        <div class="space-y-2 text-sm">
+          <div class="flex justify-between">
+            <span class="text-blue-800">Оборудование:</span>
+            <span id="sumEq" class="font-medium text-blue-900">0 ₽</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-blue-800">Обвязка:</span>
+            <span id="sumPip" class="font-medium text-blue-900">0 ₽</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-blue-800">Услуги:</span>
+            <span id="sumSv" class="font-medium text-blue-900">0 ₽</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-blue-800">Промежуточный итог:</span>
+            <span id="sumSubtotal" class="font-medium text-blue-900">0 ₽</span>
+          </div>
+          <div id="discRow" class="flex justify-between hidden">
+            <span class="text-blue-800">Скидки:</span>
+            <span id="sumDisc" class="font-medium text-red-600">-0 ₽</span>
+          </div>
+          
+          <div class="border-t border-blue-300 pt-3 flex justify-between items-center">
+            <span class="font-semibold text-blue-900">ИТОГО:</span>
+            <span id="sumTot" class="text-2xl font-bold text-blue-600">0 ₽</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bg-yellow-50 rounded-xl border border-yellow-200 p-4">
+        <div class="flex gap-2">
+          <i data-lucide="info" class="w-5 h-5 text-yellow-600 flex-shrink-0"></i>
+          <div class="text-sm text-yellow-800">
+            <p class="font-medium">Перед созданием КП:</p>
+            <ul class="mt-2 space-y-1 list-disc list-inside">
+              <li>Проверьте все позиции</li>
+              <li>Убедитесь в корректности цен</li>
+              <li>Проверьте условия оплаты</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+    
+  </div>
+</div>

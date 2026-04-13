@@ -1,0 +1,522 @@
+<%# views/pages/client/docs.ejs %>
+
+<% layout('layouts/default') %>
+
+<%
+  var contracts = typeof contractsList !== 'undefined' ? contractsList : [];
+  var proposals = typeof proposalsList !== 'undefined' ? proposalsList : [];
+  var instructions = typeof instructionsList !== 'undefined' ? instructionsList : [];
+  var certificates = typeof certificatesList !== 'undefined' ? certificatesList : [];
+  var acts = typeof actsList !== 'undefined' ? actsList : [];
+%>
+
+<div class="p-4 md:p-6 max-w-6xl mx-auto space-y-6">
+  
+  <!-- Заголовок -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Документы</h1>
+      <p class="text-gray-500 mt-1">Договоры, КП, инструкции и сертификаты</p>
+    </div>
+  </div>
+
+  <!-- Табы -->
+  <div class="border-b border-gray-200">
+    <nav class="flex gap-4 -mb-px" id="docTabs">
+      <button type="button" data-tab="all" class="doc-tab px-4 py-3 text-sm font-medium border-b-2 border-blue-500 text-blue-600">
+        Все документы
+      </button>
+      <button type="button" data-tab="contracts" class="doc-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+        Договоры
+      </button>
+      <button type="button" data-tab="proposals" class="doc-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+        КП
+      </button>
+      <button type="button" data-tab="instructions" class="doc-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+        Инструкции
+      </button>
+      <button type="button" data-tab="certificates" class="doc-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+        Сертификаты
+      </button>
+      <button type="button" data-tab="acts" class="doc-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+        Акты
+      </button>
+    </nav>
+  </div>
+
+  <!-- Договоры -->
+  <div id="tab-contracts" class="doc-section space-y-4">
+    <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+      <i data-lucide="file-text" class="w-5 h-5 text-blue-500"></i>
+      Договоры
+    </h2>
+    
+    <% if (contracts.length > 0) { %>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <% contracts.forEach(function(doc) { %>
+          <%- include('../partials/doc-card', { doc: doc, type: 'contract' }) %>
+        <% }); %>
+      </div>
+    <% } else { %>
+      <!-- Демо данные -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Договор 1 -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden group">
+          <div class="aspect-[4/3] bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center relative">
+            <i data-lucide="file-text" class="w-16 h-16 text-blue-300"></i>
+            <div class="absolute top-2 right-2">
+              <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">Действует</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <h3 class="font-medium text-gray-900 mb-1">Договор №124-2024</h3>
+            <p class="text-sm text-gray-500 mb-3">Договор на установку системы водоочистки</p>
+            <div class="flex items-center justify-between text-xs text-gray-400">
+              <span>01.03.2024</span>
+              <span>PDF, 245 КБ</span>
+            </div>
+            <div class="mt-3 flex gap-2">
+              <a href="/documents/clients/demo/dogovor.pdf" target="_blank" 
+                class="flex-1 px-3 py-2 bg-blue-600 text-white text-sm text-center rounded-lg hover:bg-blue-700">
+                Открыть
+              </a>
+              <a href="/documents/clients/demo/dogovor.pdf" download
+                class="px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
+                <i data-lucide="download" class="w-4 h-4"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Договор 2 -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden group">
+          <div class="aspect-[4/3] bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center relative">
+            <i data-lucide="file-text" class="w-16 h-16 text-blue-300"></i>
+            <div class="absolute top-2 right-2">
+              <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">Действует</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <h3 class="font-medium text-gray-900 mb-1">Договор ТО №124-ТО-2024</h3>
+            <p class="text-sm text-gray-500 mb-3">Договор на сервисное обслуживание</p>
+            <div class="flex items-center justify-between text-xs text-gray-400">
+              <span>01.03.2024</span>
+              <span>PDF, 180 КБ</span>
+            </div>
+            <div class="mt-3 flex gap-2">
+              <a href="/documents/clients/demo/dogovor.pdf" target="_blank" 
+                class="flex-1 px-3 py-2 bg-blue-600 text-white text-sm text-center rounded-lg hover:bg-blue-700">
+                Открыть
+              </a>
+              <a href="/documents/clients/demo/dogovor.pdf" download
+                class="px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
+                <i data-lucide="download" class="w-4 h-4"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% } %>
+  </div>
+
+  <!-- Коммерческие предложения -->
+  <div id="tab-proposals" class="doc-section space-y-4">
+    <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+      <i data-lucide="file-bar-chart" class="w-5 h-5 text-purple-500"></i>
+      Коммерческие предложения
+    </h2>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <!-- КП 1 -->
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+        <div class="aspect-[4/3] bg-gradient-to-br from-purple-50 to-purple-100 flex items-center justify-center relative">
+          <i data-lucide="file-bar-chart" class="w-16 h-16 text-purple-300"></i>
+          <div class="absolute top-2 right-2">
+            <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">Принято</span>
+          </div>
+        </div>
+        <div class="p-4">
+          <h3 class="font-medium text-gray-900 mb-1">КП-2024-0087</h3>
+          <p class="text-sm text-gray-500 mb-2">Система водоочистки для коттеджа</p>
+          <p class="text-lg font-bold text-gray-900 mb-3">185 000 ₽</p>
+          <div class="flex items-center justify-between text-xs text-gray-400">
+            <span>15.02.2024</span>
+            <span>PDF, 520 КБ</span>
+          </div>
+          <div class="mt-3 flex gap-2">
+            <a href="/documents/clients/demo/kp.pdf" target="_blank" 
+              class="flex-1 px-3 py-2 bg-purple-600 text-white text-sm text-center rounded-lg hover:bg-purple-700">
+              Открыть
+            </a>
+            <a href="/documents/clients/demo/kp.pdf" download
+              class="px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
+              <i data-lucide="download" class="w-4 h-4"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+      
+      <!-- КП 2 -->
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+        <div class="aspect-[4/3] bg-gradient-to-br from-purple-50 to-purple-100 flex items-center justify-center relative">
+          <i data-lucide="file-bar-chart" class="w-16 h-16 text-purple-300"></i>
+          <div class="absolute top-2 right-2">
+            <span class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded">На рассмотрении</span>
+          </div>
+        </div>
+        <div class="p-4">
+          <h3 class="font-medium text-gray-900 mb-1">КП-2024-0156</h3>
+          <p class="text-sm text-gray-500 mb-2">Дополнительное оборудование</p>
+          <p class="text-lg font-bold text-gray-900 mb-3">42 500 ₽</p>
+          <div class="flex items-center justify-between text-xs text-gray-400">
+            <span>10.12.2024</span>
+            <span>PDF, 380 КБ</span>
+          </div>
+          <div class="mt-3 flex gap-2">
+            <a href="/documents/clients/demo/kp.pdf" target="_blank" 
+              class="flex-1 px-3 py-2 bg-purple-600 text-white text-sm text-center rounded-lg hover:bg-purple-700">
+              Открыть
+            </a>
+            <a href="/client/proposals/123" 
+              class="px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
+              Ответить
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Инструкции -->
+  <div id="tab-instructions" class="doc-section space-y-4">
+    <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+      <i data-lucide="book-open" class="w-5 h-5 text-green-500"></i>
+      Инструкции по эксплуатации
+    </h2>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <!-- Инструкция 1 -->
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+        <div class="aspect-[4/3] bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center">
+          <i data-lucide="book-open" class="w-16 h-16 text-green-300"></i>
+        </div>
+        <div class="p-4">
+          <h3 class="font-medium text-gray-900 mb-1">Клапан управления Runxin F67C</h3>
+          <p class="text-sm text-gray-500 mb-3">Инструкция по настройке и эксплуатации автоматического клапана</p>
+          <div class="flex items-center justify-between text-xs text-gray-400">
+            <span>Runxin</span>
+            <span>PDF, 2.1 МБ</span>
+          </div>
+          <div class="mt-3 flex gap-2">
+            <a href="/documents/clients/demo/klapan.pdf" target="_blank" 
+              class="flex-1 px-3 py-2 bg-green-600 text-white text-sm text-center rounded-lg hover:bg-green-700">
+              Открыть
+            </a>
+            <a href="/documents/clients/demo/klapan.pdf" download
+              class="px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
+              <i data-lucide="download" class="w-4 h-4"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Инструкция 2 -->
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+        <div class="aspect-[4/3] bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center">
+          <i data-lucide="book-open" class="w-16 h-16 text-green-300"></i>
+        </div>
+        <div class="p-4">
+          <h3 class="font-medium text-gray-900 mb-1">Компрессор Aquapro AS-19</h3>
+          <p class="text-sm text-gray-500 mb-3">Руководство по установке и обслуживанию воздушного компрессора</p>
+          <div class="flex items-center justify-between text-xs text-gray-400">
+            <span>Aquapro</span>
+            <span>PDF, 850 КБ</span>
+          </div>
+          <div class="mt-3 flex gap-2">
+            <a href="/documents/clients/demo/kompressor.pdf" target="_blank" 
+              class="flex-1 px-3 py-2 bg-green-600 text-white text-sm text-center rounded-lg hover:bg-green-700">
+              Открыть
+            </a>
+            <a href="/documents/clients/demo/kompressor.pdf" download
+              class="px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
+              <i data-lucide="download" class="w-4 h-4"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Инструкция 3 -->
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+        <div class="aspect-[4/3] bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center">
+          <i data-lucide="book-open" class="w-16 h-16 text-green-300"></i>
+        </div>
+        <div class="p-4">
+          <h3 class="font-medium text-gray-900 mb-1">Загрузка фильтрующая EcoFerox</h3>
+          <p class="text-sm text-gray-500 mb-3">Характеристики и рекомендации по эксплуатации загрузки</p>
+          <div class="flex items-center justify-between text-xs text-gray-400">
+            <span>EcoFerox</span>
+            <span>PDF, 1.2 МБ</span>
+          </div>
+          <div class="mt-3 flex gap-2">
+            <a href="/documents/clients/demo/zasypka.pdf" target="_blank" 
+              class="flex-1 px-3 py-2 bg-green-600 text-white text-sm text-center rounded-lg hover:bg-green-700">
+              Открыть
+            </a>
+            <a href="/documents/clients/demo/zasypka.pdf" download
+              class="px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
+              <i data-lucide="download" class="w-4 h-4"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Инструкция 4 -->
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+        <div class="aspect-[4/3] bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center">
+          <i data-lucide="book-open" class="w-16 h-16 text-green-300"></i>
+        </div>
+        <div class="p-4">
+          <h3 class="font-medium text-gray-900 mb-1">Умягчитель воды</h3>
+          <p class="text-sm text-gray-500 mb-3">Инструкция по настройке умягчителя и засыпке соли</p>
+          <div class="flex items-center justify-between text-xs text-gray-400">
+            <span>Общая</span>
+            <span>PDF, 680 КБ</span>
+          </div>
+          <div class="mt-3 flex gap-2">
+            <a href="/documents/clients/demo/zasypka.pdf" target="_blank" 
+              class="flex-1 px-3 py-2 bg-green-600 text-white text-sm text-center rounded-lg hover:bg-green-700">
+              Открыть
+            </a>
+            <a href="/documents/clients/demo/zasypka.pdf" download
+              class="px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
+              <i data-lucide="download" class="w-4 h-4"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Инструкция 5 -->
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+        <div class="aspect-[4/3] bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center">
+          <i data-lucide="book-open" class="w-16 h-16 text-green-300"></i>
+        </div>
+        <div class="p-4">
+          <h3 class="font-medium text-gray-900 mb-1">УФ-стерилизатор Aquapro</h3>
+          <p class="text-sm text-gray-500 mb-3">Руководство по замене лампы и обслуживанию</p>
+          <div class="flex items-center justify-between text-xs text-gray-400">
+            <span>Aquapro</span>
+            <span>PDF, 450 КБ</span>
+          </div>
+          <div class="mt-3 flex gap-2">
+            <a href="/documents/clients/demo/kompressor.pdf" target="_blank" 
+              class="flex-1 px-3 py-2 bg-green-600 text-white text-sm text-center rounded-lg hover:bg-green-700">
+              Открыть
+            </a>
+            <a href="/documents/clients/demo/kompressor.pdf" download
+              class="px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
+              <i data-lucide="download" class="w-4 h-4"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Сертификаты -->
+  <div id="tab-certificates" class="doc-section space-y-4">
+    <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+      <i data-lucide="award" class="w-5 h-5 text-yellow-500"></i>
+      Сертификаты качества
+    </h2>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <!-- Сертификат 1 -->
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+        <div class="aspect-[4/3] bg-gradient-to-br from-yellow-50 to-amber-100 flex items-center justify-center">
+          <i data-lucide="award" class="w-16 h-16 text-yellow-400"></i>
+        </div>
+        <div class="p-4">
+          <h3 class="font-medium text-gray-900 mb-1">Сертификат соответствия</h3>
+          <p class="text-sm text-gray-500 mb-3">Клапан управления Runxin F67C - ГОСТ Р</p>
+          <div class="flex items-center justify-between text-xs text-gray-400">
+            <span>до 15.06.2026</span>
+            <span>PDF, 320 КБ</span>
+          </div>
+          <div class="mt-3 flex gap-2">
+            <a href="/documents/clients/demo/klapan.pdf" target="_blank" 
+              class="flex-1 px-3 py-2 bg-yellow-500 text-white text-sm text-center rounded-lg hover:bg-yellow-600">
+              Открыть
+            </a>
+            <a href="/documents/clients/demo/klapan.pdf" download
+              class="px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
+              <i data-lucide="download" class="w-4 h-4"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Сертификат 2 -->
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+        <div class="aspect-[4/3] bg-gradient-to-br from-yellow-50 to-amber-100 flex items-center justify-center">
+          <i data-lucide="award" class="w-16 h-16 text-yellow-400"></i>
+        </div>
+        <div class="p-4">
+          <h3 class="font-medium text-gray-900 mb-1">Гигиенический сертификат</h3>
+          <p class="text-sm text-gray-500 mb-3">Загрузка EcoFerox - Роспотребнадзор</p>
+          <div class="flex items-center justify-between text-xs text-gray-400">
+            <span>до 20.12.2025</span>
+            <span>PDF, 280 КБ</span>
+          </div>
+          <div class="mt-3 flex gap-2">
+            <a href="/documents/clients/demo/zasypka.pdf" target="_blank" 
+              class="flex-1 px-3 py-2 bg-yellow-500 text-white text-sm text-center rounded-lg hover:bg-yellow-600">
+              Открыть
+            </a>
+            <a href="/documents/clients/demo/zasypka.pdf" download
+              class="px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
+              <i data-lucide="download" class="w-4 h-4"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Сертификат 3 -->
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+        <div class="aspect-[4/3] bg-gradient-to-br from-yellow-50 to-amber-100 flex items-center justify-center">
+          <i data-lucide="award" class="w-16 h-16 text-yellow-400"></i>
+        </div>
+        <div class="p-4">
+          <h3 class="font-medium text-gray-900 mb-1">Сертификат NSF</h3>
+          <p class="text-sm text-gray-500 mb-3">Ионообменная смола BetaSoft</p>
+          <div class="flex items-center justify-between text-xs text-gray-400">
+            <span>до 01.09.2027</span>
+            <span>PDF, 410 КБ</span>
+          </div>
+          <div class="mt-3 flex gap-2">
+            <a href="/documents/clients/demo/zasypka.pdf" target="_blank" 
+              class="flex-1 px-3 py-2 bg-yellow-500 text-white text-sm text-center rounded-lg hover:bg-yellow-600">
+              Открыть
+            </a>
+            <a href="/documents/clients/demo/zasypka.pdf" download
+              class="px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
+              <i data-lucide="download" class="w-4 h-4"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Акты -->
+  <div id="tab-acts" class="doc-section space-y-4">
+    <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+      <i data-lucide="clipboard-check" class="w-5 h-5 text-indigo-500"></i>
+      Акты выполненных работ
+    </h2>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <!-- Акт 1 -->
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+        <div class="aspect-[4/3] bg-gradient-to-br from-indigo-50 to-indigo-100 flex items-center justify-center">
+          <i data-lucide="clipboard-check" class="w-16 h-16 text-indigo-300"></i>
+        </div>
+        <div class="p-4">
+          <h3 class="font-medium text-gray-900 mb-1">Акт №124-1</h3>
+          <p class="text-sm text-gray-500 mb-3">Акт выполненных работ по монтажу системы</p>
+          <div class="flex items-center justify-between text-xs text-gray-400">
+            <span>01.03.2024</span>
+            <span>PDF, 150 КБ</span>
+          </div>
+          <div class="mt-3 flex gap-2">
+            <a href="/documents/clients/demo/dogovor.pdf" target="_blank" 
+              class="flex-1 px-3 py-2 bg-indigo-600 text-white text-sm text-center rounded-lg hover:bg-indigo-700">
+              Открыть
+            </a>
+            <a href="/documents/clients/demo/dogovor.pdf" download
+              class="px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
+              <i data-lucide="download" class="w-4 h-4"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Акт 2 -->
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+        <div class="aspect-[4/3] bg-gradient-to-br from-indigo-50 to-indigo-100 flex items-center justify-center">
+          <i data-lucide="clipboard-check" class="w-16 h-16 text-indigo-300"></i>
+        </div>
+        <div class="p-4">
+          <h3 class="font-medium text-gray-900 mb-1">Акт №124-2</h3>
+          <p class="text-sm text-gray-500 mb-3">Акт сервисного обслуживания</p>
+          <div class="flex items-center justify-between text-xs text-gray-400">
+            <span>01.07.2024</span>
+            <span>PDF, 120 КБ</span>
+          </div>
+          <div class="mt-3 flex gap-2">
+            <a href="/documents/clients/demo/dogovor.pdf" target="_blank" 
+              class="flex-1 px-3 py-2 bg-indigo-600 text-white text-sm text-center rounded-lg hover:bg-indigo-700">
+              Открыть
+            </a>
+            <a href="/documents/clients/demo/dogovor.pdf" download
+              class="px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
+              <i data-lucide="download" class="w-4 h-4"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Пустое состояние (если нет документов вообще) -->
+  <div id="emptyState" class="hidden text-center py-12">
+    <i data-lucide="folder-open" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i>
+    <h3 class="text-lg font-medium text-gray-900 mb-2">Документов пока нет</h3>
+    <p class="text-gray-500">Здесь будут отображаться ваши договоры, КП и другие документы</p>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+  
+  var tabs = document.querySelectorAll('.doc-tab');
+  var sections = document.querySelectorAll('.doc-section');
+  var activeTab = 'all';
+  
+  function showTab(tab) {
+    activeTab = tab;
+    
+    // Обновляем стили табов
+    tabs.forEach(function(t) {
+      if (t.dataset.tab === tab) {
+        t.classList.add('border-blue-500', 'text-blue-600');
+        t.classList.remove('border-transparent', 'text-gray-500');
+      } else {
+        t.classList.remove('border-blue-500', 'text-blue-600');
+        t.classList.add('border-transparent', 'text-gray-500');
+      }
+    });
+    
+    // Показываем/скрываем секции
+    sections.forEach(function(s) {
+      var sectionTab = s.id.replace('tab-', '');
+      if (tab === 'all' || sectionTab === tab) {
+        s.classList.remove('hidden');
+      } else {
+        s.classList.add('hidden');
+      }
+    });
+  }
+  
+  // Обработчики табов
+  tabs.forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      showTab(this.dataset.tab);
+    });
+  });
+  
+  // Показываем все по умолчанию
+  showTab('all');
+})();
+</script>

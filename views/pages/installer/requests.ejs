@@ -1,0 +1,180 @@
+<%# views/pages/installer/requests.ejs %>
+<% layout('layouts/default') %>
+<%
+  var reqs = typeof requests !== 'undefined' ? requests : [];
+  var c = typeof counts !== 'undefined' ? counts : {};
+  var fmtDate = function(d){ return d ? new Date(d).toLocaleDateString('ru-RU') : '—'; };
+  var typeNames = { maintenance:'Плановое ТО', refill:'Перезасыпка', repair:'Ремонт', analysis:'Анализ воды', other:'Другое' };
+  var typeIcons = { maintenance:'wrench', refill:'refresh-cw', repair:'tool', analysis:'flask-conical', other:'help-circle' };
+  var statusNames = { new:'Новая', in_progress:'В работе', completed:'Выполнена', cancelled:'Отменена' };
+  var statusColors = { new:'bg-blue-100 text-blue-700', in_progress:'bg-yellow-100 text-yellow-700', completed:'bg-green-100 text-green-700', cancelled:'bg-gray-100 text-gray-500' };
+%>
+
+<div class="p-4 md:p-6 max-w-5xl mx-auto space-y-5">
+
+  <div class="flex items-center justify-between flex-wrap gap-3">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Заявки на обслуживание</h1>
+      <p class="text-sm text-gray-500 mt-1">Назначенные вам сервисные заявки</p>
+    </div>
+  </div>
+
+  <!-- Фильтры по статусу -->
+  <div class="flex flex-wrap gap-2">
+    <a href="?status=all" class="px-4 py-2 rounded-lg text-sm font-medium transition <%= status === 'all' ? 'bg-gray-900 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50' %>">
+      Все <span class="ml-1 opacity-60"><%= (c.new||0)+(c.in_progress||0)+(c.completed||0) %></span>
+    </a>
+    <a href="?status=new" class="px-4 py-2 rounded-lg text-sm font-medium transition <%= status === 'new' ? 'bg-blue-600 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50' %>">
+      Новые <span class="ml-1 opacity-60"><%= c.new||0 %></span>
+    </a>
+    <a href="?status=in_progress" class="px-4 py-2 rounded-lg text-sm font-medium transition <%= status === 'in_progress' ? 'bg-yellow-500 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50' %>">
+      В работе <span class="ml-1 opacity-60"><%= c.in_progress||0 %></span>
+    </a>
+    <a href="?status=completed" class="px-4 py-2 rounded-lg text-sm font-medium transition <%= status === 'completed' ? 'bg-green-600 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50' %>">
+      Выполнены <span class="ml-1 opacity-60"><%= c.completed||0 %></span>
+    </a>
+  </div>
+
+  <!-- Список -->
+  <% if(reqs.length === 0){ %>
+  <div class="bg-white rounded-xl shadow-sm border p-12 text-center">
+    <i data-lucide="inbox" class="w-16 h-16 mx-auto text-gray-300 mb-4"></i>
+    <p class="text-gray-500">Заявок не найдено</p>
+  </div>
+  <% } else { reqs.forEach(function(r){ %>
+  <div class="bg-white rounded-xl shadow-sm border hover:shadow-md transition" id="req-<%= r._id %>">
+    <div class="p-4">
+      <div class="flex items-start gap-4">
+        <!-- Иконка типа -->
+        <div class="w-11 h-11 rounded-xl bg-orange-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+          <i data-lucide="<%= typeIcons[r.serviceType] || 'wrench' %>" class="w-5 h-5 text-orange-600"></i>
+        </div>
+
+        <div class="flex-1 min-w-0">
+          <!-- Шапка -->
+          <div class="flex items-center gap-2 flex-wrap mb-1">
+            <span class="font-semibold text-gray-900"><%= typeNames[r.serviceType] || r.serviceType %></span>
+            <span class="text-xs px-2 py-0.5 rounded-full font-medium req-status <%= statusColors[r.status] %>">
+              <%= statusNames[r.status] %>
+            </span>
+          </div>
+
+          <!-- Клиент -->
+          <div class="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
+            <span class="flex items-center gap-1">
+              <i data-lucide="user" class="w-3.5 h-3.5 text-gray-400"></i>
+              <%= r.clientName || (r.clientId && r.clientId.name) || '—' %>
+            </span>
+            <% var phone = r.clientPhone || (r.clientId && r.clientId.phone) || ''; if(phone){ %>
+            <a href="tel:<%= phone %>" class="flex items-center gap-1 text-blue-600 hover:text-blue-800">
+              <i data-lucide="phone" class="w-3.5 h-3.5"></i> <%= phone %>
+            </a>
+            <% } %>
+            <% if(r.clientId && r.clientId.address){ %>
+            <span class="flex items-center gap-1">
+              <i data-lucide="map-pin" class="w-3.5 h-3.5 text-gray-400"></i> <%= r.clientId.address %>
+            </span>
+            <% } %>
+          </div>
+
+          <!-- Даты -->
+          <div class="flex gap-4 text-xs text-gray-400 mt-2">
+            <span>Создана: <%= fmtDate(r.createdAt) %></span>
+            <% if(r.preferredDate){ %>
+              <span class="font-medium text-gray-700">Желаемая дата: <b class="text-blue-600"><%= fmtDate(r.preferredDate) %></b></span>
+            <% } %>
+          </div>
+
+          <!-- Комментарий -->
+          <% if(r.comment){ %>
+          <p class="text-sm text-gray-600 mt-2 bg-gray-50 rounded-lg px-3 py-2"><%= r.comment %></p>
+          <% } %>
+
+          <!-- Результат -->
+          <% if(r.resolvedComment){ %>
+          <p class="text-sm text-green-700 mt-2 bg-green-50 rounded-lg px-3 py-2"><b>Результат:</b> <%= r.resolvedComment %></p>
+          <% } %>
+        </div>
+
+        <!-- Действия -->
+        <div class="flex flex-col gap-2 flex-shrink-0">
+          <% if(r.status === 'new'){ %>
+            <button onclick="updateStatus('<%= r._id %>', 'in_progress')" class="px-4 py-2 bg-yellow-500 text-white rounded-lg text-sm font-medium hover:bg-yellow-600 whitespace-nowrap">
+              Взять в работу
+            </button>
+          <% } else if(r.status === 'in_progress'){ %>
+            <button onclick="showComplete('<%= r._id %>')" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 whitespace-nowrap">
+              Выполнено
+            </button>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+  <% }) } %>
+
+  <!-- Пагинация -->
+  <% if(totalPages > 1){ %>
+  <div class="flex justify-center gap-2 pt-2">
+    <% for(var i = 1; i <= totalPages; i++){ %>
+      <a href="?page=<%= i %>&status=<%= status %>" class="px-3 py-1.5 rounded-lg text-sm <%= i === page ? 'bg-blue-600 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50' %>"><%= i %></a>
+    <% } %>
+  </div>
+  <% } %>
+</div>
+
+<!-- Модалка завершения -->
+<div id="completeModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+    <div class="p-5 border-b">
+      <h3 class="text-lg font-bold">Завершить заявку</h3>
+    </div>
+    <div class="p-5">
+      <label class="block text-sm font-medium text-gray-700 mb-2">Результат выполнения</label>
+      <textarea id="resolvedComment" rows="4" class="w-full border rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="Что было сделано..."></textarea>
+    </div>
+    <div class="p-5 border-t flex gap-3 justify-end">
+      <button onclick="closeComplete()" class="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">Отмена</button>
+      <button onclick="confirmComplete()" class="px-5 py-2.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700">Завершить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var currentReqId = null;
+
+function updateStatus(id, status) {
+  fetch('/installer/requests/' + id + '/status', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    body: JSON.stringify({ status: status })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    if(data.success) location.reload();
+    else alert(data.message || 'Ошибка');
+  })
+  .catch(function(){ alert('Ошибка сети'); });
+}
+
+function showComplete(id) {
+  currentReqId = id;
+  document.getElementById('resolvedComment').value = '';
+  document.getElementById('completeModal').classList.remove('hidden');
+}
+function closeComplete() { document.getElementById('completeModal').classList.add('hidden'); currentReqId = null; }
+
+function confirmComplete() {
+  var comment = document.getElementById('resolvedComment').value.trim();
+  fetch('/installer/requests/' + currentReqId + '/status', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    body: JSON.stringify({ status: 'completed', resolvedComment: comment })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    if(data.success) location.reload();
+    else alert(data.message || 'Ошибка');
+  });
+}
+</script>

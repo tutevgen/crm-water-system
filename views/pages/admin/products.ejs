@@ -1,0 +1,546 @@
+<%# views/pages/admin/products.ejs %>
+
+<% layout('layouts/default') %>
+
+<div class="p-6">
+  <!-- Flash сообщения -->
+  <% if (typeof success !== 'undefined' && success && success.length > 0) { %>
+    <div class="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg flex items-center gap-2">
+      <i data-lucide="check-circle" class="w-5 h-5"></i>
+      <%= Array.isArray(success) ? success.join(', ') : success %>
+    </div>
+  <% } %>
+  <% if (typeof error !== 'undefined' && error && error.length > 0) { %>
+    <div class="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-center gap-2">
+      <i data-lucide="alert-circle" class="w-5 h-5"></i>
+      <%= Array.isArray(error) ? error.join(', ') : error %>
+    </div>
+  <% } %>
+
+  <!-- Заголовок -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Товары</h1>
+      <p class="text-sm text-gray-500 mt-1">Всего: <%= typeof totalProducts !== 'undefined' ? totalProducts : 0 %> товаров</p>
+    </div>
+    <div class="flex gap-3">
+      <button type="button" id="openCategoriesBtn" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center gap-2">
+        <i data-lucide="folder-tree" class="w-4 h-4"></i>
+        Категории
+      </button>
+      <button onclick="activateAll()" class="px-3 py-2 text-xs bg-green-100 text-green-700 rounded-lg hover:bg-green-200 font-medium">
+          ⚡ Активировать все товары
+        </button>
+        <a href="/admin/products/create" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
+        <i data-lucide="plus" class="w-4 h-4"></i>
+        Добавить товар
+      </a>
+    </div>
+  </div>
+
+  <!-- Фильтры -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+    <form method="GET" action="/admin/products" id="filterForm">
+      <div class="flex flex-wrap gap-4 items-end">
+        
+        <!-- Поиск -->
+        <div class="flex-1 min-w-[200px]">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Поиск</label>
+          <div class="relative">
+            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+            <input type="text" name="search" value="<%= typeof search !== 'undefined' && search ? search : '' %>" 
+              placeholder="Название, артикул, бренд..."
+              class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+          </div>
+        </div>
+        
+        <!-- Категория -->
+        <div class="w-52">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Категория</label>
+          <select name="category" id="categoryFilter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            <option value="">Все категории</option>
+            <%
+              // Получаем категории
+              var cats = typeof categories !== 'undefined' && Array.isArray(categories) ? categories : [];
+              var currentCategory = typeof category !== 'undefined' && category ? category.toString() : '';
+              
+              // Разделяем на корневые и дочерние
+              var rootCategories = cats.filter(function(c) { return !c.parent; });
+              
+              rootCategories.forEach(function(rootCat) {
+                var rootId = rootCat._id ? rootCat._id.toString() : '';
+                var rootSelected = currentCategory === rootId ? 'selected' : '';
+                var rootCount = rootCat.productCount || 0;
+            %>
+              <option value="<%= rootId %>" <%= rootSelected %>><%= rootCat.name %> (<%= rootCount %>)</option>
+            <%
+                // Находим дочерние категории
+                var childCats = cats.filter(function(c) { 
+                  return c.parent && c.parent.toString() === rootId; 
+                });
+                
+                childCats.forEach(function(childCat) {
+                  var childId = childCat._id ? childCat._id.toString() : '';
+                  var childSelected = currentCategory === childId ? 'selected' : '';
+                  var childCount = childCat.productCount || 0;
+            %>
+              <option value="<%= childId %>" <%= childSelected %>>&nbsp;&nbsp;└ <%= childCat.name %> (<%= childCount %>)</option>
+            <%
+                });
+              });
+            %>
+          </select>
+        </div>
+        
+        <!-- Видимость -->
+        <div class="w-40">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Видимость</label>
+          <select name="isVisible" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            <option value="">Все</option>
+            <option value="true" <%= typeof isVisible !== 'undefined' && isVisible === 'true' ? 'selected' : '' %>>Видимые</option>
+            <option value="false" <%= typeof isVisible !== 'undefined' && isVisible === 'false' ? 'selected' : '' %>>Скрытые</option>
+          </select>
+        </div>
+        
+        <!-- Сортировка -->
+        <div class="w-48">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Сортировка</label>
+          <select name="sort" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            <option value="">Новые первые</option>
+            <option value="oldest" <%= typeof sort !== 'undefined' && sort === 'oldest' ? 'selected' : '' %>>Старые первые</option>
+            <option value="name_asc" <%= typeof sort !== 'undefined' && sort === 'name_asc' ? 'selected' : '' %>>Название А-Я</option>
+            <option value="name_desc" <%= typeof sort !== 'undefined' && sort === 'name_desc' ? 'selected' : '' %>>Название Я-А</option>
+            <option value="price_asc" <%= typeof sort !== 'undefined' && sort === 'price_asc' ? 'selected' : '' %>>Цена ↑</option>
+            <option value="price_desc" <%= typeof sort !== 'undefined' && sort === 'price_desc' ? 'selected' : '' %>>Цена ↓</option>
+            <option value="category" <%= typeof sort !== 'undefined' && sort === 'category' ? 'selected' : '' %>>По категории</option>
+          </select>
+        </div>
+        
+        <button type="submit" class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 flex items-center gap-2">
+          <i data-lucide="filter" class="w-4 h-4"></i>
+          Применить
+        </button>
+        <a href="/admin/products" class="px-4 py-2 text-gray-600 hover:text-gray-900">Сбросить</a>
+      </div>
+      
+      <!-- Фильтры по характеристикам -->
+      <div class="mt-4 pt-4 border-t border-gray-200">
+        <%
+          var chars = typeof charValues !== 'undefined' && charValues && typeof charValues === 'object' ? charValues : {};
+          var charKeys = Object.keys(chars);
+        %>
+        <% if (charKeys.length > 0) { %>
+          <button type="button" id="toggleCharFiltersBtn" class="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1 mb-3">
+            <i data-lucide="sliders" class="w-4 h-4"></i>
+            Фильтры по характеристикам (<%= charKeys.length %>)
+            <i data-lucide="chevron-down" class="w-4 h-4 transition-transform" id="charFiltersArrow"></i>
+          </button>
+          <div id="charFiltersBlock" class="hidden grid grid-cols-2 md:grid-cols-4 gap-4">
+            <% charKeys.forEach(function(charName) { 
+              var values = Array.isArray(chars[charName]) ? chars[charName] : [];
+            %>
+              <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1"><%= charName %></label>
+                <select name="char_<%= encodeURIComponent(charName) %>" class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg">
+                  <option value="">Все</option>
+                  <% values.forEach(function(val) { %>
+                    <option value="<%= val %>"><%= val %></option>
+                  <% }); %>
+                </select>
+              </div>
+            <% }); %>
+          </div>
+        <% } else { %>
+          <p class="text-sm text-gray-500">
+            <i data-lucide="info" class="w-4 h-4 inline mr-1"></i>
+            Фильтры по характеристикам появятся после добавления товаров с характеристиками
+          </p>
+        <% } %>
+      </div>
+    </form>
+  </div>
+
+  <!-- Таблица товаров -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <% 
+      var prods = typeof products !== 'undefined' && Array.isArray(products) ? products : [];
+    %>
+    <% if (prods.length > 0) { %>
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Фото</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Название</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Категория</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Кат. КП</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Цена</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Склад</th>
+              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Видим</th>
+              <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Действия</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            <% prods.forEach(function(product) { %>
+              <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3">
+                  <% if (product.photo) { %>
+                    <img src="<%= product.photo %>" alt="<%= product.name %>" class="w-12 h-12 object-cover rounded-lg">
+                  <% } else { %>
+                    <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                      <i data-lucide="image" class="w-6 h-6 text-gray-400"></i>
+                    </div>
+                  <% } %>
+                </td>
+                <td class="px-4 py-3">
+                  <div class="font-medium text-gray-900"><%= product.name %></div>
+                  <div class="text-sm text-gray-500">
+                    <% if (product.sku) { %>Арт: <%= product.sku %><% } %>
+                    <% if (product.isFeatured) { %><span class="text-yellow-600 ml-2">★</span><% } %>
+                    <% if (product.isNewProduct) { %><span class="ml-2 px-1.5 py-0.5 bg-green-100 text-green-700 text-xs rounded">NEW</span><% } %>
+                  </div>
+                </td>
+                <td class="px-4 py-3 text-sm text-gray-600">
+                  <%= product.category && product.category.name ? product.category.name : '—' %>
+                </td>
+                <td class="px-4 py-3">
+                  <select onchange="setProposalCat('<%= product._id %>', this.value)"
+                    class="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white w-36 focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
+                    title="Категория в КП">
+                    <option value="">— не указана —</option>
+                    <% ['Аэрация','Обезжелезивание','Умягчение','Механическая очистка','Обратный осмос','УФ-обеззараживание','Другое'].forEach(function(c){ %>
+                    <option value="<%= c %>" <%= product.proposalCategory === c ? 'selected' : '' %>><%= c %></option>
+                    <% }); %>
+                  </select>
+                </td>
+                <td class="px-4 py-3">
+                  <div class="font-semibold text-green-600"><%= product.price ? product.price.toLocaleString('ru-RU') : 0 %> ₽</div>
+                  <% if (product.wholesalePrice) { %>
+                    <div class="text-xs text-blue-600">Опт: <%= product.wholesalePrice.toLocaleString('ru-RU') %> ₽</div>
+                  <% } %>
+                </td>
+                <td class="px-4 py-3">
+                  <span class="<%= product.quantity > 0 ? 'text-gray-900' : 'text-red-600 font-medium' %>">
+                    <%= product.quantity || 0 %> <%= product.unit || 'шт' %>
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-center">
+                  <button type="button" data-toggle-visibility="<%= product._id %>" data-visible="<%= product.isVisible %>"
+                    class="p-2 rounded-lg transition <%= product.isVisible ? 'bg-green-100 text-green-600 hover:bg-green-200' : 'bg-gray-100 text-gray-400 hover:bg-gray-200' %>">
+                    <i data-lucide="<%= product.isVisible ? 'eye' : 'eye-off' %>" class="w-4 h-4"></i>
+                  </button>
+                </td>
+                <td class="px-4 py-3 text-right">
+                  <div class="flex justify-end gap-1">
+                    <a href="/admin/products/<%= product._id %>/edit" class="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg" title="Редактировать">
+                      <i data-lucide="pencil" class="w-4 h-4"></i>
+                    </a>
+                    <button type="button" data-duplicate="<%= product._id %>" class="p-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg" title="Дублировать">
+                      <i data-lucide="copy" class="w-4 h-4"></i>
+                    </button>
+                    <button type="button" data-delete="<%= product._id %>" data-name="<%= product.name %>" class="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg" title="Удалить">
+                      <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Пагинация -->
+      <% 
+        var totalPagesNum = typeof totalPages !== 'undefined' ? totalPages : 1;
+        var currentPage = typeof page !== 'undefined' ? page : 1;
+      %>
+      <% if (totalPagesNum > 1) { %>
+        <div class="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
+          <div class="text-sm text-gray-600">Страница <%= currentPage %> из <%= totalPagesNum %></div>
+          <div class="flex gap-1">
+            <% 
+              var searchParam = typeof search !== 'undefined' && search ? search : '';
+              var categoryParam = typeof category !== 'undefined' && category ? category : '';
+              var visibleParam = typeof isVisible !== 'undefined' && isVisible ? isVisible : '';
+              var sortParam = typeof sort !== 'undefined' && sort ? sort : '';
+            %>
+            <% if (currentPage > 1) { %>
+              <a href="?page=<%= currentPage - 1 %>&search=<%= searchParam %>&category=<%= categoryParam %>&isVisible=<%= visibleParam %>&sort=<%= sortParam %>" class="px-3 py-1 border rounded hover:bg-gray-50">←</a>
+            <% } %>
+            <% for (var i = Math.max(1, currentPage - 2); i <= Math.min(totalPagesNum, currentPage + 2); i++) { %>
+              <a href="?page=<%= i %>&search=<%= searchParam %>&category=<%= categoryParam %>&isVisible=<%= visibleParam %>&sort=<%= sortParam %>" 
+                class="px-3 py-1 border rounded <%= i === currentPage ? 'bg-blue-600 text-white border-blue-600' : 'hover:bg-gray-50' %>"><%= i %></a>
+            <% } %>
+            <% if (currentPage < totalPagesNum) { %>
+              <a href="?page=<%= currentPage + 1 %>&search=<%= searchParam %>&category=<%= categoryParam %>&isVisible=<%= visibleParam %>&sort=<%= sortParam %>" class="px-3 py-1 border rounded hover:bg-gray-50">→</a>
+            <% } %>
+          </div>
+        </div>
+      <% } %>
+    <% } else { %>
+      <div class="p-12 text-center">
+        <i data-lucide="package" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
+        <p class="text-gray-500 mb-4">Товары не найдены</p>
+        <a href="/admin/products/create" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          Добавить первый товар
+        </a>
+      </div>
+    <% } %>
+  </div>
+
+  <!-- Журнал действий -->
+  <% 
+    var logsList = typeof logs !== 'undefined' && Array.isArray(logs) ? logs : [];
+  %>
+  <% if (logsList.length > 0) { %>
+    <div class="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+        <h3 class="font-semibold text-gray-900">Последние действия</h3>
+        <a href="/admin/products/logs" class="text-sm text-blue-600 hover:text-blue-800">Все действия →</a>
+      </div>
+      <table class="w-full">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Дата</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Пользователь</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Действие</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Товар</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <% logsList.slice(0, 5).forEach(function(log) { 
+            var actionLabels = {
+              create: { text: 'Создал', cls: 'bg-green-100 text-green-700' },
+              update: { text: 'Изменил', cls: 'bg-blue-100 text-blue-700' },
+              delete: { text: 'Удалил', cls: 'bg-red-100 text-red-700' },
+              visibility: { text: 'Видимость', cls: 'bg-yellow-100 text-yellow-700' },
+              restore: { text: 'Восстановил', cls: 'bg-purple-100 text-purple-700' }
+            };
+            var ai = actionLabels[log.action] || { text: log.action || '?', cls: 'bg-gray-100 text-gray-700' };
+            var logDate = log.timestamp || log.createdAt || new Date();
+          %>
+            <tr class="hover:bg-gray-50">
+              <td class="px-4 py-2 text-sm text-gray-500"><%= new Date(logDate).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) %></td>
+              <td class="px-4 py-2 text-sm font-medium text-gray-900"><%= log.user && log.user.name ? log.user.name : 'Система' %></td>
+              <td class="px-4 py-2"><span class="px-2 py-1 text-xs font-medium rounded <%= ai.cls %>"><%= ai.text %></span></td>
+              <td class="px-4 py-2 text-sm text-gray-600">
+                <% if (log.product && log.product._id) { %>
+                  <a href="/admin/products/<%= log.product._id %>/edit" class="text-blue-600 hover:underline"><%= log.product.name %></a>
+                <% } else { %>
+                  <span class="text-gray-400">Товар удалён</span>
+                <% } %>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+
+<!-- Модальное окно категорий -->
+<div id="categoriesModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+      <h2 class="text-lg font-semibold text-gray-900">Управление категориями</h2>
+      <button type="button" id="closeCategoriesBtn" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+    <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+      <form id="categoryForm" class="flex gap-3">
+        <input type="hidden" id="categoryId" value="">
+        <input type="text" id="categoryName" placeholder="Название категории" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
+        <select id="categoryParent" class="w-48 px-4 py-2 border border-gray-300 rounded-lg">
+          <option value="">Корневая</option>
+        </select>
+        <button type="submit" id="categorySubmitBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span id="categorySubmitText">Добавить</span>
+        </button>
+      </form>
+    </div>
+    <div class="px-6 py-4 overflow-y-auto max-h-96" id="categoriesListContainer">
+      <div class="text-center text-gray-500 py-4">Загрузка...</div>
+    </div>
+  </div>
+</div>
+
+<input type="hidden" id="csrfToken" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+
+<script>
+(function() {
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+  
+  var csrfToken = document.getElementById('csrfToken').value;
+  var modal = document.getElementById('categoriesModal');
+  var listContainer = document.getElementById('categoriesListContainer');
+  var parentSelect = document.getElementById('categoryParent');
+  
+  // Загрузка категорий
+  async function loadCategories() {
+    try {
+      var res = await fetch('/admin/products/categories', { headers: { 'Accept': 'application/json' } });
+      var data = await res.json();
+      if (data.success) {
+        renderCategories(data.categories);
+        updateParentSelect(data.categories);
+      }
+    } catch (e) {
+      listContainer.innerHTML = '<p class="text-red-500 text-center py-4">Ошибка загрузки</p>';
+    }
+  }
+  
+  function renderCategories(cats) {
+    if (!cats || !cats.length) {
+      listContainer.innerHTML = '<p class="text-gray-500 text-center py-8">Нет категорий</p>';
+      return;
+    }
+    var roots = cats.filter(function(c) { return !c.parent; });
+    var html = '<div class="space-y-2">';
+    roots.forEach(function(cat) {
+      html += '<div class="border rounded-lg">';
+      html += '<div class="flex items-center gap-3 p-3 bg-gray-50">';
+      html += '<i data-lucide="folder" class="w-5 h-5 text-gray-600"></i>';
+      html += '<span class="font-medium flex-1">' + cat.name + '</span>';
+      html += '<span class="text-sm text-gray-500">' + (cat.productCount || 0) + '</span>';
+      html += '<button class="edit-cat p-1 hover:bg-blue-50 rounded" data-id="' + cat._id + '" data-name="' + cat.name + '"><i data-lucide="pencil" class="w-4 h-4 text-blue-600"></i></button>';
+      html += '<button class="del-cat p-1 hover:bg-red-50 rounded" data-id="' + cat._id + '" data-name="' + cat.name + '"><i data-lucide="trash-2" class="w-4 h-4 text-red-600"></i></button>';
+      html += '</div>';
+      var children = cats.filter(function(c) { return c.parent && c.parent.toString() === cat._id.toString(); });
+      if (children.length) {
+        html += '<div class="border-t">';
+        children.forEach(function(ch) {
+          html += '<div class="flex items-center gap-3 p-3 pl-8 hover:bg-gray-50">';
+          html += '<i data-lucide="folder-open" class="w-4 h-4 text-gray-400"></i>';
+          html += '<span class="flex-1">' + ch.name + '</span>';
+          html += '<span class="text-sm text-gray-500">' + (ch.productCount || 0) + '</span>';
+          html += '<button class="edit-cat p-1 hover:bg-blue-50 rounded" data-id="' + ch._id + '" data-name="' + ch.name + '" data-parent="' + cat._id + '"><i data-lucide="pencil" class="w-4 h-4 text-blue-600"></i></button>';
+          html += '<button class="del-cat p-1 hover:bg-red-50 rounded" data-id="' + ch._id + '" data-name="' + ch.name + '"><i data-lucide="trash-2" class="w-4 h-4 text-red-600"></i></button>';
+          html += '</div>';
+        });
+        html += '</div>';
+      }
+      html += '</div>';
+    });
+    html += '</div>';
+    listContainer.innerHTML = html;
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+    
+    // Привязка событий
+    listContainer.querySelectorAll('.edit-cat').forEach(function(btn) {
+      btn.onclick = function() {
+        document.getElementById('categoryId').value = this.dataset.id;
+        document.getElementById('categoryName').value = this.dataset.name;
+        document.getElementById('categoryParent').value = this.dataset.parent || '';
+        document.getElementById('categorySubmitText').textContent = 'Сохранить';
+      };
+    });
+    listContainer.querySelectorAll('.del-cat').forEach(function(btn) {
+      btn.onclick = async function() {
+        if (!confirm('Удалить "' + this.dataset.name + '"?')) return;
+        await fetch('/admin/products/categories/' + this.dataset.id, { method: 'DELETE', headers: { 'X-CSRF-Token': csrfToken } });
+        loadCategories();
+        setTimeout(function() { location.reload(); }, 300);
+      };
+    });
+  }
+  
+  function updateParentSelect(cats) {
+    var roots = cats.filter(function(c) { return !c.parent; });
+    var html = '<option value="">Корневая</option>';
+    roots.forEach(function(c) { html += '<option value="' + c._id + '">' + c.name + '</option>'; });
+    parentSelect.innerHTML = html;
+  }
+  
+  function resetForm() {
+    document.getElementById('categoryId').value = '';
+    document.getElementById('categoryName').value = '';
+    document.getElementById('categoryParent').value = '';
+    document.getElementById('categorySubmitText').textContent = 'Добавить';
+  }
+  
+  // Модалка
+  document.getElementById('openCategoriesBtn').onclick = function() {
+    modal.classList.remove('hidden');
+    loadCategories();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  };
+  document.getElementById('closeCategoriesBtn').onclick = function() { modal.classList.add('hidden'); resetForm(); };
+  modal.onclick = function(e) { if (e.target === modal) { modal.classList.add('hidden'); resetForm(); } };
+  
+  // Сохранение категории
+  document.getElementById('categoryForm').onsubmit = async function(e) {
+    e.preventDefault();
+    var id = document.getElementById('categoryId').value;
+    var name = document.getElementById('categoryName').value.trim();
+    var parent = document.getElementById('categoryParent').value;
+    if (!name) return alert('Введите название');
+    var url = id ? '/admin/products/categories/' + id : '/admin/products/categories';
+    var method = id ? 'PUT' : 'POST';
+    await fetch(url, {
+      method: method,
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+      body: JSON.stringify({ name: name, parent: parent || null })
+    });
+    resetForm();
+    loadCategories();
+    setTimeout(function() { location.reload(); }, 300);
+  };
+  
+  // Фильтры по характеристикам
+  var toggleBtn = document.getElementById('toggleCharFiltersBtn');
+  var charBlock = document.getElementById('charFiltersBlock');
+  var arrow = document.getElementById('charFiltersArrow');
+  if (toggleBtn && charBlock) {
+    toggleBtn.onclick = function() {
+      charBlock.classList.toggle('hidden');
+      if (arrow) arrow.classList.toggle('rotate-180');
+    };
+  }
+  
+  // Действия с товарами
+  document.querySelectorAll('[data-toggle-visibility]').forEach(function(btn) {
+    btn.onclick = async function() {
+      var id = this.dataset.toggleVisibility;
+      var isVisible = this.dataset.visible !== 'true';
+      await fetch('/admin/products/' + id + '/visibility', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        body: JSON.stringify({ isVisible: isVisible })
+      });
+      location.reload();
+    };
+  });
+  
+  document.querySelectorAll('[data-delete]').forEach(function(btn) {
+    btn.onclick = async function() {
+      if (!confirm('Удалить "' + this.dataset.name + '"?')) return;
+      await fetch('/admin/products/' + this.dataset.delete, { method: 'DELETE', headers: { 'X-CSRF-Token': csrfToken } });
+      location.reload();
+    };
+  });
+  
+  document.querySelectorAll('[data-duplicate]').forEach(function(btn) {
+    btn.onclick = async function() {
+      var res = await fetch('/admin/products/' + this.dataset.duplicate + '/duplicate', { method: 'POST', headers: { 'X-CSRF-Token': csrfToken } });
+      var data = await res.json();
+      if (data.productId) window.location.href = '/admin/products/' + data.productId + '/edit';
+      else location.reload();
+    };
+  });
+})();
+
+async function setProposalCat(id, cat) {
+  try {
+    const r = await fetch('/admin/products/' + id + '/proposal-category', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '<%= csrfToken %>' },
+      body: JSON.stringify({ proposalCategory: cat })
+    });
+    const d = await r.json();
+    if(!d.success) alert('Не удалось сохранить');
+  } catch(e) { alert('Ошибка'); }
+}
+</script>

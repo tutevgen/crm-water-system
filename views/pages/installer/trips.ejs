@@ -1,0 +1,143 @@
+<%# views/pages/installer/trips.ejs %>
+<% layout('layouts/default') %>
+<%
+  var props = typeof proposals !== 'undefined' ? proposals : [];
+  var s = typeof stats !== 'undefined' ? stats : {};
+  var fmt = function(n){ return (Number(n)||0).toLocaleString('ru-RU'); };
+  var fmtDate = function(d){ return d ? new Date(d).toLocaleDateString('ru-RU') : '—'; };
+  var statusNames = { accepted:'Назначен', accepted_premium:'Назначен (премиум)', in_progress:'Монтаж идёт', installed:'Завершён' };
+  var statusColors = { accepted:'bg-blue-100 text-blue-700', accepted_premium:'bg-amber-100 text-amber-700', in_progress:'bg-indigo-100 text-indigo-700', installed:'bg-emerald-100 text-emerald-700' };
+  var objTypes = { house:'Дом', dacha:'Дача', apartment:'Квартира', commercial:'Коммерческое', production:'Производство' };
+  var waterSources = { well:'Колодец', borehole:'Скважина', central:'Центральное', river:'Река/озеро' };
+%>
+
+<div class="p-4 md:p-6 max-w-5xl mx-auto space-y-5">
+
+  <div class="flex items-center justify-between flex-wrap gap-3">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Мои выезды</h1>
+      <p class="text-sm text-gray-500 mt-1">Назначенные монтажи систем водоочистки</p>
+    </div>
+    <div class="flex gap-2 text-sm">
+      <span class="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg font-medium">Активных: <%= s.active||0 %></span>
+      <span class="bg-green-50 text-green-700 px-3 py-1.5 rounded-lg font-medium">Завершено: <%= s.completed||0 %></span>
+    </div>
+  </div>
+
+  <!-- Фильтры -->
+  <div class="flex gap-2">
+    <a href="?status=all" class="px-4 py-2 rounded-lg text-sm font-medium <%= statusFilter==='all' ? 'bg-gray-900 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50' %>">Все</a>
+    <a href="?status=active" class="px-4 py-2 rounded-lg text-sm font-medium <%= statusFilter==='active' ? 'bg-indigo-600 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50' %>">Активные</a>
+    <a href="?status=completed" class="px-4 py-2 rounded-lg text-sm font-medium <%= statusFilter==='completed' ? 'bg-green-600 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50' %>">Завершённые</a>
+  </div>
+
+  <% if(props.length === 0){ %>
+  <div class="bg-white rounded-xl shadow-sm border p-12 text-center">
+    <i data-lucide="truck" class="w-16 h-16 mx-auto text-gray-300 mb-4"></i>
+    <p class="text-gray-500">Назначенных выездов нет</p>
+  </div>
+  <% } else { props.forEach(function(p){
+    var items = p.acceptedVariant === 'premium' ? (p.premiumItems || p.items || []) : (p.items || []);
+    var isActive = ['accepted','accepted_premium','in_progress'].includes(p.status);
+  %>
+  <div class="bg-white rounded-xl shadow-sm border hover:shadow-md transition">
+    <!-- Шапка -->
+    <div class="p-4 border-b flex items-center gap-4">
+      <div class="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 <%= isActive ? 'bg-indigo-50' : 'bg-emerald-50' %>">
+        <i data-lucide="<%= isActive ? 'truck' : 'check-circle' %>" class="w-5 h-5 <%= isActive ? 'text-indigo-600' : 'text-emerald-600' %>"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="font-bold text-gray-900"><%= p.proposalNumber %></span>
+          <span class="text-xs px-2 py-0.5 rounded-full font-medium <%= statusColors[p.status] || '' %>"><%= statusNames[p.status] || p.status %></span>
+          <% if(p.acceptedVariant === 'premium'){ %><span class="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">Премиум</span><% } %>
+        </div>
+        <span class="text-sm text-gray-500"><%= fmt(p.acceptedAmount || p.totalPrice) %> ₽</span>
+      </div>
+
+      <!-- Действия -->
+      <div class="flex gap-2 flex-shrink-0">
+        <% if(['accepted','accepted_premium'].includes(p.status)){ %>
+          <button onclick="updateTrip('<%= p._id %>', 'in_progress')" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">
+            Начать монтаж
+          </button>
+        <% } else if(p.status === 'in_progress'){ %>
+          <button onclick="showFinish('<%= p._id %>')" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700">
+            Завершить
+          </button>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Информация о клиенте -->
+    <div class="px-4 py-3 border-b bg-gray-50 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+      <span class="flex items-center gap-1.5"><i data-lucide="user" class="w-4 h-4 text-gray-400"></i> <b><%= p.clientName || '—' %></b></span>
+      <% if(p.clientPhone){ %><a href="tel:<%= p.clientPhone %>" class="flex items-center gap-1.5 text-blue-600"><i data-lucide="phone" class="w-4 h-4"></i> <%= p.clientPhone %></a><% } %>
+      <% if(p.objectAddress){ %><span class="flex items-center gap-1.5"><i data-lucide="map-pin" class="w-4 h-4 text-gray-400"></i> <%= p.objectAddress %></span><% } %>
+      <% if(p.objectType){ %><span class="text-gray-500"><%= objTypes[p.objectType] || p.objectType %></span><% } %>
+      <% if(p.waterSource){ %><span class="text-gray-500"><%= waterSources[p.waterSource] || p.waterSource %></span><% } %>
+    </div>
+
+    <!-- Оборудование -->
+    <% if(items.length > 0){ %>
+    <div class="p-4">
+      <p class="text-xs text-gray-500 font-medium mb-2 uppercase tracking-wider">Оборудование (<%= items.length %> поз.)</p>
+      <div class="space-y-1.5">
+        <% items.forEach(function(item){ %>
+        <div class="flex items-center gap-3 text-sm">
+          <span class="w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0"></span>
+          <span class="flex-1 text-gray-700"><%= item.name %></span>
+          <span class="text-gray-400"><%= item.quantity || 1 %> шт</span>
+        </div>
+        <% }) %>
+      </div>
+      <% if(p.pipingMaterialName){ %>
+        <p class="text-xs text-gray-500 mt-2">Обвязка: <b><%= p.pipingMaterialName %></b></p>
+      <% } %>
+    </div>
+    <% } %>
+
+    <% if(p.installedAt){ %>
+    <div class="px-4 pb-3 text-xs text-emerald-600 flex items-center gap-1.5">
+      <i data-lucide="check" class="w-3.5 h-3.5"></i> Завершён <%= fmtDate(p.installedAt) %>
+      <% if(p.installNotes){ %><span class="text-gray-500 ml-2">· <%= p.installNotes %></span><% } %>
+    </div>
+    <% } %>
+  </div>
+  <% }) } %>
+</div>
+
+<!-- Модалка завершения монтажа -->
+<div id="finishModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+    <div class="p-5 border-b"><h3 class="text-lg font-bold">Завершить монтаж</h3></div>
+    <div class="p-5">
+      <label class="block text-sm font-medium text-gray-700 mb-2">Примечания по монтажу</label>
+      <textarea id="installNotes" rows="4" class="w-full border rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-green-500" placeholder="Особенности установки, замечания..."></textarea>
+    </div>
+    <div class="p-5 border-t flex gap-3 justify-end">
+      <button onclick="document.getElementById('finishModal').classList.add('hidden')" class="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">Отмена</button>
+      <button onclick="confirmFinish()" class="px-5 py-2.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700">Завершить монтаж</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var currentTripId = null;
+
+function updateTrip(id, status) {
+  fetch('/installer/trips/' + id + '/status', {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    body: JSON.stringify({ status: status })
+  }).then(function(r){ return r.json(); }).then(function(d){ if(d.success) location.reload(); else alert(d.message); });
+}
+
+function showFinish(id) { currentTripId = id; document.getElementById('installNotes').value = ''; document.getElementById('finishModal').classList.remove('hidden'); }
+function confirmFinish() {
+  var notes = document.getElementById('installNotes').value.trim();
+  fetch('/installer/trips/' + currentTripId + '/status', {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    body: JSON.stringify({ status: 'installed', installNotes: notes })
+  }).then(function(r){ return r.json(); }).then(function(d){ if(d.success) location.reload(); else alert(d.message); });
+}
+</script>

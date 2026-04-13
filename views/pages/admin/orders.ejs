@@ -1,0 +1,179 @@
+<%# views/pages/admin/orders.ejs %>
+<% layout('layouts/default') %>
+<%
+  var ords = typeof orders !== 'undefined' ? orders : [];
+  var c = typeof ordCounts !== 'undefined' ? ordCounts : {};
+  var instList = typeof installersList !== 'undefined' ? installersList : [];
+  var fmt = function(n){ return (Number(n)||0).toLocaleString('ru-RU'); };
+  var fmtDate = function(d){ return d ? new Date(d).toLocaleDateString('ru-RU') : '—'; };
+  var statusNames = { accepted:'Новый', accepted_premium:'Новый (премиум)', in_progress:'Монтаж', installed:'Завершён' };
+  var statusColors = { accepted:'bg-green-100 text-green-700', accepted_premium:'bg-amber-100 text-amber-700', in_progress:'bg-indigo-100 text-indigo-700', installed:'bg-emerald-100 text-emerald-700' };
+  var typeNames = { installation:'Монтаж', refill:'Перезасыпка', maintenance:'ТО', repair:'Ремонт' };
+  var typeIcons = { installation:'home', refill:'refresh-cw', maintenance:'wrench', repair:'tool' };
+  // Общий список исполнителей для выпадающего списка (загружается из panel.js)
+%>
+
+<div class="p-4 md:p-6 max-w-7xl mx-auto space-y-5">
+
+  <div class="flex items-center justify-between flex-wrap gap-3">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Заказы</h1>
+      <p class="text-sm text-gray-500 mt-1">Монтажи, обслуживание, перезасыпки, выезды</p>
+    </div>
+    <div class="flex gap-2 text-xs">
+      <span class="bg-green-50 text-green-700 px-3 py-1.5 rounded-lg font-medium">Новых: <%= c.active||0 %></span>
+      <span class="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg font-medium">Монтаж: <%= c.in_progress||0 %></span>
+      <span class="bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg font-medium">Завершено: <%= c.installed||0 %></span>
+    </div>
+  </div>
+
+  <!-- Фильтры -->
+  <div class="bg-white rounded-xl border p-4">
+    <form method="get" class="flex flex-wrap gap-3 items-end">
+      <div class="flex-1 min-w-[200px]">
+        <label class="text-xs text-gray-500 mb-1 block">Поиск</label>
+        <div class="relative">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+          <input type="text" name="search" value="<%= ordSearch %>" placeholder="Номер КП, клиент, телефон..." class="w-full pl-10 pr-4 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+        </div>
+      </div>
+      <div>
+        <label class="text-xs text-gray-500 mb-1 block">Статус</label>
+        <select name="status" class="border rounded-lg py-2 px-3 text-sm">
+          <option value="all" <%= ordStatus==='all'?'selected':'' %>>Все</option>
+          <option value="active" <%= ordStatus==='active'?'selected':'' %>>Новые</option>
+          <option value="in_progress" <%= ordStatus==='in_progress'?'selected':'' %>>Монтаж</option>
+          <option value="installed" <%= ordStatus==='installed'?'selected':'' %>>Завершённые</option>
+        </select>
+      </div>
+      <button type="submit" class="px-5 py-2 bg-gray-900 text-white rounded-lg text-sm hover:bg-gray-800">Найти</button>
+    </form>
+  </div>
+
+  <!-- Карточки заказов -->
+  <% if(ords.length === 0){ %>
+  <div class="bg-white rounded-xl shadow-sm border p-12 text-center">
+    <i data-lucide="clipboard-list" class="w-16 h-16 mx-auto text-gray-300 mb-4"></i>
+    <p class="text-gray-500">Заказов не найдено</p>
+  </div>
+  <% } else { ords.forEach(function(o){
+    var isActive = ['accepted','accepted_premium','in_progress'].includes(o.status);
+    var execId = o.installedBy ? (o.installedBy._id || o.installedBy) : '';
+    var execName = o.installedBy?.name || '';
+  %>
+  <div class="bg-white rounded-xl shadow-sm border hover:shadow-md transition" id="order-<%= o._id %>">
+    <div class="p-4">
+      <div class="flex items-start gap-4">
+        <!-- Иконка типа -->
+        <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 <%= isActive ? 'bg-blue-50' : 'bg-emerald-50' %>">
+          <i data-lucide="<%= typeIcons[o.proposalType] || 'clipboard-list' %>" class="w-6 h-6 <%= isActive ? 'text-blue-600' : 'text-emerald-600' %>"></i>
+        </div>
+
+        <div class="flex-1 min-w-0">
+          <!-- Шапка -->
+          <div class="flex items-center gap-2 flex-wrap mb-2">
+            <a href="/admin/proposals/<%= o._id %>" class="font-bold text-blue-600 hover:underline text-lg"><%= o.proposalNumber %></a>
+            <span class="text-xs px-2 py-0.5 rounded-full font-medium <%= statusColors[o.status] || '' %>"><%= statusNames[o.status] || o.status %></span>
+            <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full"><%= typeNames[o.proposalType] || 'Монтаж' %></span>
+            <% if(o.acceptedVariant==='premium'){ %><span class="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-medium">Премиум</span><% } %>
+            <span class="text-xl font-black text-gray-900 ml-auto"><%= fmt(o.acceptedAmount || o.totalPrice) %> ₽</span>
+          </div>
+
+          <!-- Клиент -->
+          <div class="grid sm:grid-cols-2 gap-3 mb-3">
+            <div class="flex flex-col gap-1 text-sm">
+              <span class="flex items-center gap-1.5 text-gray-700"><i data-lucide="user" class="w-4 h-4 text-gray-400"></i> <b><%= o.clientName || (o.clientId && o.clientId.name) || '—' %></b></span>
+              <% var phone = o.clientPhone || (o.clientId && o.clientId.phone); if(phone){ %>
+                <a href="tel:<%= phone %>" class="flex items-center gap-1.5 text-blue-600 hover:underline"><i data-lucide="phone" class="w-4 h-4"></i> <%= phone %></a>
+              <% } %>
+              <% if(o.objectAddress){ %><span class="flex items-center gap-1.5 text-gray-500"><i data-lucide="map-pin" class="w-4 h-4 text-gray-400"></i> <%= o.objectAddress %></span><% } %>
+            </div>
+
+            <!-- Исполнитель + сохранение -->
+            <% if(isActive){ %>
+            <div class="bg-gray-50 rounded-xl p-3">
+              <label class="text-xs font-medium text-gray-600 mb-1.5 block">Исполнитель</label>
+              <div class="flex gap-2">
+                <select id="exec-<%= o._id %>" class="flex-1 border rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500">
+                  <option value="">— Не назначен —</option>
+                  <optgroup label="Монтажники">
+                    <% instList.filter(function(x){ return x.role === 'installer'; }).forEach(function(inst){ %>
+                      <option value="<%= inst._id %>" <%= String(execId) === String(inst._id) ? 'selected' : '' %>><%= inst.name %></option>
+                    <% }) %>
+                  </optgroup>
+                  <optgroup label="Менеджеры">
+                    <% instList.filter(function(x){ return x.role === 'manager'; }).forEach(function(inst){ %>
+                      <option value="<%= inst._id %>" <%= String(execId) === String(inst._id) ? 'selected' : '' %>><%= inst.name %></option>
+                    <% }) %>
+                  </optgroup>
+                </select>
+                <button onclick="saveExecutor('<%= o._id %>')" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center gap-1.5 whitespace-nowrap">
+                  <i data-lucide="save" class="w-4 h-4"></i> Сохранить
+                </button>
+              </div>
+              <% if(execName){ %><p class="text-xs text-gray-500 mt-1">Текущий: <b><%= execName %></b></p><% } %>
+            </div>
+            <% } else { %>
+            <div class="flex items-center gap-2 text-sm text-gray-600">
+              <i data-lucide="user-check" class="w-4 h-4 text-gray-400"></i>
+              Исполнитель: <b><%= execName || '—' %></b>
+            </div>
+            <% } %>
+          </div>
+
+          <!-- Даты и действия -->
+          <div class="flex items-center gap-3 flex-wrap text-xs text-gray-400">
+            <span>Создано: <%= fmtDate(o.createdAt) %></span>
+            <% if(o.acceptedAt){ %><span>Принято: <%= fmtDate(o.acceptedAt) %></span><% } %>
+            <% if(o.installedAt){ %><span class="text-emerald-600 font-medium">Установлено: <%= fmtDate(o.installedAt) %></span><% } %>
+
+            <div class="ml-auto flex gap-2">
+              <% if(['accepted','accepted_premium'].includes(o.status)){ %>
+                <button onclick="updateOrdStatus('<%= o._id %>', 'in_progress')" class="px-4 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700">В монтаж →</button>
+              <% } else if(o.status === 'in_progress'){ %>
+                <button onclick="updateOrdStatus('<%= o._id %>', 'installed')" class="px-4 py-1.5 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700">Завершить ✓</button>
+              <% } %>
+              <a href="/admin/proposals/<%= o._id %>" class="px-4 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs hover:bg-gray-200">Подробнее</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <% }) } %>
+
+  <!-- Пагинация -->
+  <% if(ordTotalPages > 1){ %>
+  <div class="flex justify-center gap-2 pt-2">
+    <% for(var i = 1; i <= ordTotalPages; i++){ %>
+      <a href="?page=<%= i %>&status=<%= ordStatus %>&search=<%= ordSearch %>" class="px-3 py-1.5 rounded-lg text-sm <%= i === ordPage ? 'bg-blue-600 text-white' : 'bg-white border text-gray-600' %>"><%= i %></a>
+    <% } %>
+  </div>
+  <% } %>
+</div>
+
+<script>
+function saveExecutor(orderId) {
+  var sel = document.getElementById('exec-' + orderId);
+  var executorId = sel.value;
+  if(!executorId) { alert('Выберите исполнителя'); return; }
+  fetch('/admin/orders/' + orderId + '/executor', {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    body: JSON.stringify({ executorId: executorId })
+  }).then(r => r.json()).then(d => {
+    if(d.success) {
+      var btn = sel.closest('.bg-gray-50').querySelector('button');
+      btn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Сохранено';
+      btn.classList.replace('bg-blue-600', 'bg-green-600');
+      if(window.lucide) lucide.createIcons();
+      setTimeout(function(){ btn.innerHTML = '<i data-lucide="save" class="w-4 h-4"></i> Сохранить'; btn.classList.replace('bg-green-600', 'bg-blue-600'); if(window.lucide) lucide.createIcons(); }, 2000);
+    } else alert(d.message);
+  });
+}
+function updateOrdStatus(id, status) {
+  fetch('/admin/orders/' + id + '/status', {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    body: JSON.stringify({ status: status })
+  }).then(r => r.json()).then(d => { if(d.success) location.reload(); else alert(d.message); });
+}
+</script>

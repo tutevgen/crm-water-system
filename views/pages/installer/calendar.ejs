@@ -1,0 +1,111 @@
+<%# views/pages/installer/calendar.ejs %>
+<% layout('layouts/default') %>
+<%
+  var evts = typeof events !== 'undefined' ? events : [];
+  var fmtDate = function(d){ return d ? new Date(d).toLocaleDateString('ru-RU') : '—'; };
+  var now = new Date();
+  var month = now.getMonth();
+  var year = now.getFullYear();
+  var monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+  var dayNames = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+
+  // Группируем события по дате
+  var eventsByDate = {};
+  evts.forEach(function(e){
+    var d = e.date ? new Date(e.date).toISOString().split('T')[0] : null;
+    if(d){ if(!eventsByDate[d]) eventsByDate[d] = []; eventsByDate[d].push(e); }
+  });
+
+  // Генерируем дни месяца
+  var firstDay = new Date(year, month, 1);
+  var lastDay = new Date(year, month + 1, 0);
+  var startDow = (firstDay.getDay() + 6) % 7; // Пн=0
+  var daysInMonth = lastDay.getDate();
+  var today = now.getDate();
+%>
+
+<div class="p-4 md:p-6 max-w-5xl mx-auto space-y-5">
+
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Календарь</h1>
+      <p class="text-sm text-gray-500 mt-1"><%= monthNames[month] %> <%= year %></p>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="flex items-center gap-1.5 text-xs"><span class="w-2.5 h-2.5 rounded-full bg-orange-400"></span> Заявки</span>
+      <span class="flex items-center gap-1.5 text-xs"><span class="w-2.5 h-2.5 rounded-full bg-indigo-400"></span> Монтажи</span>
+    </div>
+  </div>
+
+  <!-- Календарная сетка -->
+  <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+    <!-- Дни недели -->
+    <div class="grid grid-cols-7 border-b">
+      <% dayNames.forEach(function(d){ %>
+        <div class="text-center text-xs font-medium text-gray-500 py-2"><%= d %></div>
+      <% }) %>
+    </div>
+    <!-- Ячейки -->
+    <div class="grid grid-cols-7">
+      <% for(var i = 0; i < startDow; i++){ %>
+        <div class="min-h-[80px] md:min-h-[100px] border-b border-r p-1 bg-gray-50"></div>
+      <% } %>
+      <% for(var d = 1; d <= daysInMonth; d++){
+        var dateStr = year + '-' + String(month+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+        var dayEvents = eventsByDate[dateStr] || [];
+        var isToday = d === today;
+        var isWeekend = ((startDow + d - 1) % 7) >= 5;
+      %>
+        <div class="min-h-[80px] md:min-h-[100px] border-b border-r p-1 <%= isWeekend ? 'bg-gray-50/50' : '' %> hover:bg-blue-50/30 transition">
+          <div class="flex items-center justify-between px-1">
+            <span class="text-sm font-medium <%= isToday ? 'bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center' : isWeekend ? 'text-gray-400' : 'text-gray-700' %>"><%= d %></span>
+            <% if(dayEvents.length > 0){ %>
+              <span class="text-[10px] text-gray-400"><%= dayEvents.length %></span>
+            <% } %>
+          </div>
+          <div class="mt-1 space-y-0.5">
+            <% dayEvents.slice(0,3).forEach(function(e){ %>
+              <div class="px-1.5 py-0.5 rounded text-[11px] leading-tight truncate cursor-pointer hover:opacity-80 <%= e.type === 'installation' ? 'bg-indigo-100 text-indigo-700' : 'bg-orange-100 text-orange-700' %>"
+                   title="<%= e.title %> — <%= e.clientName %> <%= e.clientPhone %> <%= e.address %>">
+                <%= e.title.substring(0, 20) %><%= e.title.length > 20 ? '…' : '' %>
+              </div>
+            <% }) %>
+            <% if(dayEvents.length > 3){ %>
+              <div class="text-[10px] text-gray-400 px-1">+<%= dayEvents.length - 3 %> ещё</div>
+            <% } %>
+          </div>
+        </div>
+      <% } %>
+      <% var remaining = 7 - ((startDow + daysInMonth) % 7); if(remaining < 7){ for(var i = 0; i < remaining; i++){ %>
+        <div class="min-h-[80px] md:min-h-[100px] border-b border-r p-1 bg-gray-50"></div>
+      <% }} %>
+    </div>
+  </div>
+
+  <!-- Список событий -->
+  <div class="bg-white rounded-xl shadow-sm border">
+    <div class="p-4 border-b">
+      <h2 class="font-bold text-gray-900">Предстоящие события</h2>
+    </div>
+    <div class="divide-y max-h-[400px] overflow-y-auto">
+      <% if(evts.length === 0){ %>
+        <div class="p-6 text-center text-gray-400 text-sm">Нет предстоящих событий</div>
+      <% } else { evts.forEach(function(e){ %>
+      <div class="p-3 hover:bg-gray-50 flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 <%= e.type === 'installation' ? 'bg-indigo-50' : 'bg-orange-50' %>">
+          <i data-lucide="<%= e.type === 'installation' ? 'home' : 'wrench' %>" class="w-4 h-4 <%= e.type === 'installation' ? 'text-indigo-600' : 'text-orange-600' %>"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium text-gray-900 truncate"><%= e.title %></p>
+          <div class="flex gap-3 text-xs text-gray-500">
+            <span><%= fmtDate(e.date) %></span>
+            <% if(e.clientPhone){ %><span><%= e.clientPhone %></span><% } %>
+            <% if(e.address){ %><span class="truncate"><%= e.address %></span><% } %>
+          </div>
+        </div>
+      </div>
+      <% }) } %>
+    </div>
+  </div>
+
+</div>

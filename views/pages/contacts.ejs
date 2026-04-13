@@ -1,0 +1,170 @@
+<%# views/pages/contacts.ejs %>
+
+<% layout('layouts/default') %>
+
+<div class="p-4 md:p-6 max-w-6xl mx-auto">
+  
+  <!-- Заголовок -->
+  <div class="text-center mb-10">
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">Контакты</h1>
+    <p class="text-gray-600">Свяжитесь с нами любым удобным способом</p>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    
+    <!-- Контактная информация -->
+    <div class="space-y-6">
+      
+      <!-- Телефон -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div class="flex items-start gap-4">
+          <div class="p-3 bg-blue-100 rounded-lg">
+            <i data-lucide="phone" class="w-6 h-6 text-blue-600"></i>
+          </div>
+          <div>
+            <h3 class="font-semibold text-gray-900 mb-2">Телефон</h3>
+            <a href="tel:+74951234567" class="text-xl font-bold text-blue-600 hover:text-blue-800">
+              +7 (495) 123-45-67
+            </a>
+            <p class="text-sm text-gray-500 mt-1">Пн-Пт: 9:00 - 19:00</p>
+            <p class="text-sm text-gray-500">Сб: 10:00 - 16:00</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Email -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div class="flex items-start gap-4">
+          <div class="p-3 bg-green-100 rounded-lg">
+            <i data-lucide="mail" class="w-6 h-6 text-green-600"></i>
+          </div>
+          <div>
+            <h3 class="font-semibold text-gray-900 mb-2">Email</h3>
+            <a href="mailto:info@aquafilter.ru" class="text-lg text-blue-600 hover:text-blue-800">
+              info@aquafilter.ru
+            </a>
+            <p class="text-sm text-gray-500 mt-1">Ответим в течение 2 часов</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Адрес -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div class="flex items-start gap-4">
+          <div class="p-3 bg-purple-100 rounded-lg">
+            <i data-lucide="map-pin" class="w-6 h-6 text-purple-600"></i>
+          </div>
+          <div>
+            <h3 class="font-semibold text-gray-900 mb-2">Офис и склад</h3>
+            <p class="text-gray-700">г. Москва, ул. Примерная, д. 123</p>
+            <p class="text-sm text-gray-500 mt-1">Станция метро Примерная, 5 мин пешком</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Мессенджеры -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h3 class="font-semibold text-gray-900 mb-4">Мессенджеры</h3>
+        <div class="flex gap-4">
+          <a href="https://wa.me/74951234567" target="_blank" 
+            class="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+            </svg>
+            WhatsApp
+          </a>
+          <a href="https://t.me/aquafilter" target="_blank" 
+            class="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+            </svg>
+            Telegram
+          </a>
+        </div>
+      </div>
+      
+    </div>
+    
+    <!-- Форма обратной связи -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <h2 class="text-xl font-bold text-gray-900 mb-6">Напишите нам</h2>
+      
+      <% if (typeof success !== 'undefined' && success && success.length > 0) { %>
+        <div class="mb-6 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg flex items-center gap-2">
+          <i data-lucide="check-circle" class="w-5 h-5"></i>
+          <%= Array.isArray(success) ? success.join(', ') : success %>
+        </div>
+      <% } %>
+      
+      <form id="contactForm" action="/contacts" method="POST" class="space-y-4">
+        <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Ваше имя *</label>
+          <input type="text" name="name" required
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Иван Иванов">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+          <input type="email" name="email" required
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="email@example.com">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Телефон</label>
+          <input type="tel" name="phone"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="+7 (999) 123-45-67">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Тема обращения</label>
+          <select name="subject" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            <option value="consultation">Консультация</option>
+            <option value="order">Заказ оборудования</option>
+            <option value="service">Обслуживание</option>
+            <option value="complaint">Претензия</option>
+            <option value="other">Другое</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Сообщение *</label>
+          <textarea name="message" rows="4" required
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Опишите ваш вопрос..."></textarea>
+        </div>
+        
+        <button type="submit" 
+          class="w-full px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2">
+          <i data-lucide="send" class="w-4 h-4"></i>
+          Отправить сообщение
+        </button>
+        
+        <p class="text-xs text-gray-500 text-center">
+          Нажимая кнопку, вы соглашаетесь с политикой обработки персональных данных
+        </p>
+      </form>
+    </div>
+    
+  </div>
+  
+  <!-- Карта (опционально) -->
+  <div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <div class="h-80 bg-gray-200 flex items-center justify-center">
+      <div class="text-center text-gray-500">
+        <i data-lucide="map" class="w-12 h-12 mx-auto mb-2 opacity-50"></i>
+        <p>Здесь будет карта</p>
+        <p class="text-sm">Подключите Яндекс.Карты или Google Maps</p>
+      </div>
+    </div>
+  </div>
+  
+</div>
+
+<script>
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+</script>

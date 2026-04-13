@@ -1,0 +1,696 @@
+<%# views/pages/admin/product-form.ejs - форма создания/редактирования товара %>
+
+<% layout('layouts/default') %>
+
+<div class="p-6">
+  <!-- Хлебные крошки -->
+  <nav class="mb-4 text-sm">
+    <a href="/admin/products" class="text-blue-600 hover:underline">Товары</a>
+    <span class="mx-2 text-gray-400">/</span>
+    <span class="text-gray-600"><%= isEdit ? 'Редактирование' : 'Новый товар' %></span>
+  </nav>
+  
+  <!-- Заголовок -->
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-gray-900"><%= isEdit ? 'Редактирование товара' : 'Новый товар' %></h1>
+    <div class="flex gap-3">
+      <a href="/admin/products" class="px-4 py-2 text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50">
+        Отмена
+      </a>
+      <button type="button" id="saveProductBtn" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
+        <i data-lucide="save" class="w-4 h-4"></i>
+        Сохранить
+      </button>
+    </div>
+  </div>
+  
+  <form id="productForm" enctype="multipart/form-data">
+    <div class="flex gap-6">
+      <!-- Левая колонка - табы -->
+      <div class="flex-1">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <!-- Навигация по табам -->
+          <div class="flex border-b border-gray-200 bg-gray-50">
+            <button type="button" class="tab-btn px-6 py-3 text-sm font-medium border-b-2 border-blue-600 text-blue-600" data-tab="basic">Основное</button>
+            <button type="button" class="tab-btn px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700" data-tab="description">Описание</button>
+            <button type="button" class="tab-btn px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700" data-tab="characteristics">Характеристики</button>
+            <button type="button" class="tab-btn px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700" data-tab="gallery">Галерея</button>
+            <button type="button" class="tab-btn px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700" data-tab="documents">Документы</button>
+            <button type="button" class="tab-btn px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700" data-tab="seo">SEO</button>
+          </div>
+          
+          <!-- Контент табов -->
+          <div class="p-6">
+            <!-- Таб: Основное -->
+            <div id="tab-basic" class="tab-content">
+              <div class="grid grid-cols-2 gap-6">
+                <!-- Название -->
+                <div class="col-span-2">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Название <span class="text-red-500">*</span></label>
+                  <input type="text" name="name" value="<%= product.name || '' %>" required
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <!-- Категория -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Категория <span class="text-red-500">*</span></label>
+                  <select name="category" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <option value="">Выберите категорию</option>
+                    <% if (typeof categories !== 'undefined' && categories.length > 0) { %>
+                      <% categories.filter(function(c) { return !c.parent; }).forEach(function(cat) { 
+                        var isSelected = product.category && (product.category._id || product.category).toString() === cat._id.toString();
+                      %>
+                        <option value="<%= cat._id %>" <%= isSelected ? 'selected' : '' %>><%= cat.name %></option>
+                        <% categories.filter(function(c) { return c.parent && c.parent.toString() === cat._id.toString(); }).forEach(function(child) { 
+                          var childSelected = product.category && (product.category._id || product.category).toString() === child._id.toString();
+                        %>
+                          <option value="<%= child._id %>" <%= childSelected ? 'selected' : '' %>>&nbsp;&nbsp;└ <%= child.name %></option>
+                        <% }); %>
+                      <% }); %>
+                    <% } %>
+                  </select>
+                </div>
+                
+                <!-- Категория в КП (для автоподстановки в оборудование) -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Категория в КП
+                    <span class="text-xs text-gray-400 ml-1">— подставляется автоматически при добавлении в КП</span>
+                  </label>
+                  <select name="proposalCategory" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <option value="">— не указана —</option>
+                    <% ['Аэрация','Обезжелезивание','Умягчение','Механическая очистка','Обратный осмос','УФ-обеззараживание','Другое'].forEach(function(c){ %>
+                    <option value="<%= c %>" <%= (typeof product !== 'undefined' && product.proposalCategory === c) ? 'selected' : '' %>><%= c %></option>
+                    <% }); %>
+                  </select>
+                </div>
+
+                <!-- Бренд -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Бренд</label>
+                  <input type="text" name="brand" value="<%= product.brand || '' %>" list="brandsList"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                  <datalist id="brandsList">
+                    <% if (typeof brands !== 'undefined') { brands.forEach(function(b) { %>
+                      <option value="<%= b %>">
+                    <% }); } %>
+                  </datalist>
+                </div>
+                
+                <!-- Цена -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Цена <span class="text-red-500">*</span></label>
+                  <input type="number" name="price" value="<%= product.price || '' %>" step="0.01" min="0" required
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <!-- Оптовая цена -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Оптовая цена</label>
+                  <input type="number" name="wholesalePrice" value="<%= product.wholesalePrice || '' %>" step="0.01" min="0"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <!-- Старая цена -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Старая цена</label>
+                  <input type="number" name="oldPrice" value="<%= product.oldPrice || '' %>" step="0.01" min="0"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <!-- Артикул -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Артикул (SKU)</label>
+                  <input type="text" name="sku" value="<%= product.sku || '' %>"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <!-- Количество -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Количество</label>
+                  <input type="number" name="quantity" value="<%= product.quantity || 0 %>" min="0"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <!-- Единица измерения -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Единица</label>
+                  <select name="unit" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <option value="шт" <%= product.unit === 'шт' ? 'selected' : '' %>>шт</option>
+                    <option value="кг" <%= product.unit === 'кг' ? 'selected' : '' %>>кг</option>
+                    <option value="л" <%= product.unit === 'л' ? 'selected' : '' %>>л</option>
+                    <option value="м" <%= product.unit === 'м' ? 'selected' : '' %>>м</option>
+                    <option value="м²" <%= product.unit === 'м²' ? 'selected' : '' %>>м²</option>
+                    <option value="м³" <%= product.unit === 'м³' ? 'selected' : '' %>>м³</option>
+                    <option value="комплект" <%= product.unit === 'комплект' ? 'selected' : '' %>>комплект</option>
+                    <option value="упаковка" <%= product.unit === 'упаковка' ? 'selected' : '' %>>упаковка</option>
+                  </select>
+                </div>
+                
+                <!-- Склад -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Склад</label>
+                  <input type="text" name="warehouse" value="<%= product.warehouse || '' %>"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <!-- Гарантия -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Гарантия (мес.)</label>
+                  <input type="number" name="warranty" value="<%= product.warranty || '' %>" min="0"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <!-- Страна -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Страна</label>
+                  <input type="text" name="countryOfOrigin" value="<%= product.countryOfOrigin || '' %>"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <!-- Вес -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Вес (кг)</label>
+                  <input type="number" name="weight" value="<%= product.weight || '' %>" step="0.01" min="0"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <!-- Видео -->
+                <div class="col-span-2">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Видео (YouTube URL)</label>
+                  <input type="url" name="videoUrl" value="<%= product.videoUrl || '' %>" placeholder="https://youtube.com/..."
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+              </div>
+            </div>
+            
+            <!-- Таб: Описание -->
+            <div id="tab-description" class="tab-content hidden">
+              <div class="space-y-6">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Краткое описание</label>
+                  <textarea name="shortDescription" rows="3" maxlength="500"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"><%= product.shortDescription || '' %></textarea>
+                  <p class="mt-1 text-xs text-gray-500">До 500 символов</p>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Полное описание</label>
+                  <textarea name="description" rows="10" maxlength="10000"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"><%= product.description || '' %></textarea>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Таб: Характеристики -->
+            <div id="tab-characteristics" class="tab-content hidden">
+              <div id="characteristicsList" class="space-y-3">
+                <% 
+                  var chars = product.characteristics || {};
+                  if (chars instanceof Map) chars = Object.fromEntries(chars);
+                  Object.keys(chars).forEach(function(key) { 
+                %>
+                  <div class="flex gap-3 characteristic-row">
+                    <input type="text" name="charKey[]" value="<%= key %>" placeholder="Название" list="charKeysList"
+                      class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <input type="text" name="charValue[]" value="<%= chars[key] %>" placeholder="Значение"
+                      class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <button type="button" onclick="this.closest('.characteristic-row').remove()" class="p-2 text-red-500 hover:bg-red-50 rounded-lg">
+                      <i data-lucide="trash-2" class="w-5 h-5"></i>
+                    </button>
+                  </div>
+                <% }); %>
+              </div>
+              <datalist id="charKeysList">
+                <option value="Производительность">
+                <option value="Рабочее давление">
+                <option value="Температура воды">
+                <option value="Размер подключения">
+                <option value="Ресурс картриджа">
+                <option value="Материал корпуса">
+                <option value="Тип фильтрации">
+                <option value="Высота">
+                <option value="Диаметр">
+              </datalist>
+              <button type="button" id="addCharBtn" class="mt-4 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                Добавить характеристику
+              </button>
+            </div>
+            
+            <!-- Таб: Галерея -->
+            <div id="tab-gallery" class="tab-content hidden">
+              <div id="galleryDropZone" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition cursor-pointer">
+                <i data-lucide="images" class="w-12 h-12 text-gray-400 mx-auto mb-4"></i>
+                <p class="text-gray-600">Перетащите изображения сюда или кликните для выбора</p>
+                <p class="text-sm text-gray-400 mt-1">JPG, PNG, WebP до 10MB</p>
+                <input type="file" id="galleryInput" name="galleryFiles" multiple accept="image/*" class="hidden">
+              </div>
+              
+              <div id="galleryPreview" class="mt-6 grid grid-cols-4 gap-4">
+                <% if (product.gallery && product.gallery.length > 0) { product.gallery.forEach(function(img) { %>
+                  <div class="relative group" data-image-id="<%= img._id %>">
+                    <img src="<%= img.url %>" class="w-full h-32 object-cover rounded-lg">
+                    <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition rounded-lg flex items-center justify-center gap-2">
+                      <button type="button" onclick="setMainImage('<%= img._id %>')" class="p-2 bg-white rounded-lg hover:bg-yellow-100" title="Сделать главным">
+                        <i data-lucide="star" class="w-4 h-4 <%= img.isMain ? 'text-yellow-500 fill-yellow-500' : 'text-gray-600' %>"></i>
+                      </button>
+                      <button type="button" onclick="deleteGalleryImage('<%= img._id %>')" class="p-2 bg-white rounded-lg hover:bg-red-100" title="Удалить">
+                        <i data-lucide="trash-2" class="w-4 h-4 text-red-600"></i>
+                      </button>
+                    </div>
+                    <% if (img.isMain) { %>
+                      <span class="absolute top-2 left-2 px-2 py-0.5 bg-yellow-500 text-white text-xs rounded">Главное</span>
+                    <% } %>
+                  </div>
+                <% }); } %>
+              </div>
+            </div>
+            
+            <!-- Таб: Документы -->
+            <div id="tab-documents" class="tab-content hidden">
+              <div class="grid grid-cols-3 gap-4 mb-6">
+                <button type="button" onclick="addDocument('manual')" class="p-4 border-2 border-dashed border-blue-300 rounded-lg hover:bg-blue-50 text-center">
+                  <i data-lucide="book-open" class="w-8 h-8 text-blue-500 mx-auto mb-2"></i>
+                  <span class="text-sm text-gray-700">Инструкция</span>
+                </button>
+                <button type="button" onclick="addDocument('certificate')" class="p-4 border-2 border-dashed border-green-300 rounded-lg hover:bg-green-50 text-center">
+                  <i data-lucide="award" class="w-8 h-8 text-green-500 mx-auto mb-2"></i>
+                  <span class="text-sm text-gray-700">Сертификат</span>
+                </button>
+                <button type="button" onclick="addDocument('passport')" class="p-4 border-2 border-dashed border-purple-300 rounded-lg hover:bg-purple-50 text-center">
+                  <i data-lucide="file-text" class="w-8 h-8 text-purple-500 mx-auto mb-2"></i>
+                  <span class="text-sm text-gray-700">Паспорт</span>
+                </button>
+                <button type="button" onclick="addDocument('scheme')" class="p-4 border-2 border-dashed border-orange-300 rounded-lg hover:bg-orange-50 text-center">
+                  <i data-lucide="git-branch" class="w-8 h-8 text-orange-500 mx-auto mb-2"></i>
+                  <span class="text-sm text-gray-700">Схема</span>
+                </button>
+                <button type="button" onclick="addDocument('warranty')" class="p-4 border-2 border-dashed border-teal-300 rounded-lg hover:bg-teal-50 text-center">
+                  <i data-lucide="shield" class="w-8 h-8 text-teal-500 mx-auto mb-2"></i>
+                  <span class="text-sm text-gray-700">Гарантия</span>
+                </button>
+                <button type="button" onclick="addDocument('other')" class="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-50 text-center">
+                  <i data-lucide="file" class="w-8 h-8 text-gray-500 mx-auto mb-2"></i>
+                  <span class="text-sm text-gray-700">Другое</span>
+                </button>
+              </div>
+              <input type="file" id="documentInput" name="documentFiles" accept=".pdf,.doc,.docx" class="hidden">
+              <input type="hidden" id="documentType" name="documentType" value="other">
+              
+              <div id="documentsList" class="space-y-3">
+                <% if (product.documents && product.documents.length > 0) { product.documents.forEach(function(doc) { 
+                  var typeLabels = { manual: 'Инструкция', certificate: 'Сертификат', passport: 'Паспорт', scheme: 'Схема', warranty: 'Гарантия', other: 'Документ' };
+                  var typeColors = { manual: 'blue', certificate: 'green', passport: 'purple', scheme: 'orange', warranty: 'teal', other: 'gray' };
+                %>
+                  <div class="flex items-center gap-4 p-3 bg-gray-50 rounded-lg" data-doc-id="<%= doc._id %>">
+                    <i data-lucide="file-text" class="w-6 h-6 text-<%= typeColors[doc.type] || 'gray' %>-500"></i>
+                    <div class="flex-1">
+                      <div class="font-medium text-gray-900"><%= doc.name %></div>
+                      <div class="text-sm text-gray-500"><%= typeLabels[doc.type] || 'Документ' %> • <%= doc.size ? (doc.size / 1024).toFixed(1) + ' KB' : '' %></div>
+                    </div>
+                    <a href="<%= doc.file %>" target="_blank" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg">
+                      <i data-lucide="download" class="w-5 h-5"></i>
+                    </a>
+                    <button type="button" onclick="deleteDocument('<%= doc._id %>')" class="p-2 text-red-600 hover:bg-red-50 rounded-lg">
+                      <i data-lucide="trash-2" class="w-5 h-5"></i>
+                    </button>
+                  </div>
+                <% }); } %>
+              </div>
+            </div>
+            
+            <!-- Таб: SEO -->
+            <div id="tab-seo" class="tab-content hidden">
+              <div class="space-y-6">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">SEO Заголовок</label>
+                  <input type="text" name="seo[title]" value="<%= product.seo ? product.seo.title || '' : '' %>" maxlength="70"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                  <p class="mt-1 text-xs text-gray-500">До 70 символов</p>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">SEO Описание</label>
+                  <textarea name="seo[description]" rows="3" maxlength="160"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"><%= product.seo ? product.seo.description || '' : '' %></textarea>
+                  <p class="mt-1 text-xs text-gray-500">До 160 символов</p>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Ключевые слова</label>
+                  <input type="text" name="seo[keywords]" value="<%= product.seo ? product.seo.keywords || '' : '' %>" placeholder="через запятую"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Правая колонка -->
+      <div class="w-80 space-y-6">
+        <!-- Публикация -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+          <h3 class="font-semibold text-gray-900 mb-4">Публикация</h3>
+          <div class="space-y-3">
+            <label class="flex items-center gap-3 cursor-pointer">
+              <input type="checkbox" name="isVisible" value="true" <%= product.isVisible ? 'checked' : '' %>
+                class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500">
+              <span class="text-gray-700">Показывать в каталоге</span>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer">
+              <input type="checkbox" name="isFeatured" value="true" <%= product.isFeatured ? 'checked' : '' %>
+                class="w-5 h-5 text-yellow-600 rounded focus:ring-yellow-500">
+              <span class="text-gray-700">Рекомендуемый ★</span>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer">
+              <input type="checkbox" name="isNewProduct" value="true" <%= product.isNewProduct ? 'checked' : '' %>
+                class="w-5 h-5 text-green-600 rounded focus:ring-green-500">
+              <span class="text-gray-700">Новинка</span>
+            </label>
+          </div>
+        </div>
+        
+        <!-- Главное фото -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+          <h3 class="font-semibold text-gray-900 mb-4">Главное фото</h3>
+          <div id="mainPhotoDropZone" class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-500 transition cursor-pointer">
+            <% if (product.photo) { %>
+              <img src="<%= product.photo %>" id="mainPhotoPreview" class="w-full h-40 object-cover rounded-lg mb-2">
+              <button type="button" onclick="removeMainPhoto()" class="text-sm text-red-600 hover:underline">Удалить</button>
+            <% } else { %>
+              <i data-lucide="image-plus" class="w-10 h-10 text-gray-400 mx-auto mb-2"></i>
+              <p class="text-sm text-gray-500">Кликните для загрузки</p>
+            <% } %>
+            <input type="file" id="mainPhotoInput" name="photo" accept="image/*" class="hidden">
+          </div>
+        </div>
+        
+        <!-- Информация -->
+        <% if (isEdit && product._id) { %>
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+            <h3 class="font-semibold text-gray-900 mb-4">Информация</h3>
+            <div class="text-sm space-y-2 text-gray-600">
+              <div class="flex justify-between">
+                <span>Создан:</span>
+                <span><%= product.createdAt ? new Date(product.createdAt).toLocaleDateString('ru-RU') : '—' %></span>
+              </div>
+              <div class="flex justify-between">
+                <span>Изменён:</span>
+                <span><%= product.updatedAt ? new Date(product.updatedAt).toLocaleDateString('ru-RU') : '—' %></span>
+              </div>
+              <div class="flex justify-between">
+                <span>Просмотры:</span>
+                <span><%= product.metadata ? product.metadata.views || 0 : 0 %></span>
+              </div>
+              <div class="flex justify-between">
+                <span>Продажи:</span>
+                <span><%= product.metadata ? product.metadata.sales || 0 : 0 %></span>
+              </div>
+            </div>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </form>
+</div>
+
+<input type="hidden" id="csrfToken" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+<input type="hidden" id="productId" value="<%= product._id || '' %>">
+<input type="hidden" id="isEdit" value="<%= isEdit ? 'true' : 'false' %>">
+
+<script>
+(function() {
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+  
+  var csrfToken = document.getElementById('csrfToken').value;
+  var productId = document.getElementById('productId').value;
+  var isEdit = document.getElementById('isEdit').value === 'true';
+  
+  // ========== ТАБЫ ==========
+  var tabBtns = document.querySelectorAll('.tab-btn');
+  var tabContents = document.querySelectorAll('.tab-content');
+  
+  tabBtns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var tabId = this.getAttribute('data-tab');
+      
+      // Убираем активность со всех табов
+      tabBtns.forEach(function(b) {
+        b.classList.remove('border-blue-600', 'text-blue-600');
+        b.classList.add('border-transparent', 'text-gray-500');
+      });
+      
+      // Скрываем все контенты
+      tabContents.forEach(function(c) {
+        c.classList.add('hidden');
+      });
+      
+      // Активируем выбранный таб
+      this.classList.remove('border-transparent', 'text-gray-500');
+      this.classList.add('border-blue-600', 'text-blue-600');
+      
+      // Показываем контент
+      document.getElementById('tab-' + tabId).classList.remove('hidden');
+      
+      // Обновляем иконки
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    });
+  });
+  
+  // ========== ХАРАКТЕРИСТИКИ ==========
+  document.getElementById('addCharBtn').addEventListener('click', function() {
+    var list = document.getElementById('characteristicsList');
+    var row = document.createElement('div');
+    row.className = 'flex gap-3 characteristic-row';
+    row.innerHTML = '<input type="text" name="charKey[]" placeholder="Название" list="charKeysList" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">' +
+      '<input type="text" name="charValue[]" placeholder="Значение" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">' +
+      '<button type="button" onclick="this.closest(\'.characteristic-row\').remove()" class="p-2 text-red-500 hover:bg-red-50 rounded-lg"><i data-lucide="trash-2" class="w-5 h-5"></i></button>';
+    list.appendChild(row);
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  });
+  
+  // ========== ГЛАВНОЕ ФОТО ==========
+  var mainPhotoZone = document.getElementById('mainPhotoDropZone');
+  var mainPhotoInput = document.getElementById('mainPhotoInput');
+  
+  mainPhotoZone.addEventListener('click', function() {
+    mainPhotoInput.click();
+  });
+  
+  mainPhotoInput.addEventListener('change', function() {
+    if (this.files && this.files[0]) {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        mainPhotoZone.innerHTML = '<img src="' + e.target.result + '" id="mainPhotoPreview" class="w-full h-40 object-cover rounded-lg mb-2">' +
+          '<button type="button" onclick="removeMainPhoto()" class="text-sm text-red-600 hover:underline">Удалить</button>' +
+          '<input type="file" id="mainPhotoInput" name="photo" accept="image/*" class="hidden">';
+        document.getElementById('mainPhotoInput').addEventListener('change', arguments.callee);
+      };
+      reader.readAsDataURL(this.files[0]);
+    }
+  });
+  
+  window.removeMainPhoto = function() {
+    mainPhotoZone.innerHTML = '<i data-lucide="image-plus" class="w-10 h-10 text-gray-400 mx-auto mb-2"></i>' +
+      '<p class="text-sm text-gray-500">Кликните для загрузки</p>' +
+      '<input type="file" id="mainPhotoInput" name="photo" accept="image/*" class="hidden">';
+    document.getElementById('mainPhotoInput').addEventListener('change', function() {
+      if (this.files && this.files[0]) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          mainPhotoZone.innerHTML = '<img src="' + e.target.result + '" id="mainPhotoPreview" class="w-full h-40 object-cover rounded-lg mb-2">' +
+            '<button type="button" onclick="removeMainPhoto()" class="text-sm text-red-600 hover:underline">Удалить</button>' +
+            '<input type="file" id="mainPhotoInput" name="photo" accept="image/*" class="hidden">';
+        };
+        reader.readAsDataURL(this.files[0]);
+      }
+    });
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  };
+  
+  // ========== ГАЛЕРЕЯ ==========
+  var galleryZone = document.getElementById('galleryDropZone');
+  var galleryInput = document.getElementById('galleryInput');
+  var galleryPreview = document.getElementById('galleryPreview');
+  var galleryFiles = [];
+  
+  galleryZone.addEventListener('click', function() {
+    galleryInput.click();
+  });
+  
+  galleryZone.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    this.classList.add('border-blue-500', 'bg-blue-50');
+  });
+  
+  galleryZone.addEventListener('dragleave', function() {
+    this.classList.remove('border-blue-500', 'bg-blue-50');
+  });
+  
+  galleryZone.addEventListener('drop', function(e) {
+    e.preventDefault();
+    this.classList.remove('border-blue-500', 'bg-blue-50');
+    handleGalleryFiles(e.dataTransfer.files);
+  });
+  
+  galleryInput.addEventListener('change', function() {
+    handleGalleryFiles(this.files);
+  });
+  
+  function handleGalleryFiles(files) {
+    Array.from(files).forEach(function(file) {
+      if (file.type.startsWith('image/')) {
+        galleryFiles.push(file);
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          var div = document.createElement('div');
+          div.className = 'relative group';
+          div.innerHTML = '<img src="' + e.target.result + '" class="w-full h-32 object-cover rounded-lg">' +
+            '<div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition rounded-lg flex items-center justify-center">' +
+            '<button type="button" class="p-2 bg-white rounded-lg hover:bg-red-100" onclick="this.closest(\'.relative\').remove()"><i data-lucide="trash-2" class="w-4 h-4 text-red-600"></i></button>' +
+            '</div>' +
+            '<span class="absolute top-2 left-2 px-2 py-0.5 bg-blue-500 text-white text-xs rounded">Новое</span>';
+          galleryPreview.appendChild(div);
+          if (typeof lucide !== 'undefined') lucide.createIcons();
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  }
+  
+  window.setMainImage = async function(imageId) {
+    if (!productId) return;
+    try {
+      var res = await fetch('/admin/products/' + productId + '/gallery/' + imageId + '/main', {
+        method: 'PATCH',
+        headers: { 'X-CSRF-Token': csrfToken }
+      });
+      var data = await res.json();
+      if (data.success) location.reload();
+      else alert(data.message || 'Ошибка');
+    } catch (e) { alert('Ошибка сети'); }
+  };
+  
+  window.deleteGalleryImage = async function(imageId) {
+    if (!productId || !confirm('Удалить изображение?')) return;
+    try {
+      var res = await fetch('/admin/products/' + productId + '/gallery/' + imageId, {
+        method: 'DELETE',
+        headers: { 'X-CSRF-Token': csrfToken }
+      });
+      var data = await res.json();
+      if (data.success) {
+        var el = document.querySelector('[data-image-id="' + imageId + '"]');
+        if (el) el.remove();
+      } else alert(data.message || 'Ошибка');
+    } catch (e) { alert('Ошибка сети'); }
+  };
+  
+  // ========== ДОКУМЕНТЫ ==========
+  var documentInput = document.getElementById('documentInput');
+  var documentTypeInput = document.getElementById('documentType');
+  var documentsList = document.getElementById('documentsList');
+  var documentFiles = [];
+  
+  window.addDocument = function(type) {
+    documentTypeInput.value = type;
+    documentInput.click();
+  };
+  
+  documentInput.addEventListener('change', function() {
+    var type = documentTypeInput.value;
+    var typeLabels = { manual: 'Инструкция', certificate: 'Сертификат', passport: 'Паспорт', scheme: 'Схема', warranty: 'Гарантия', other: 'Документ' };
+    var typeColors = { manual: 'blue', certificate: 'green', passport: 'purple', scheme: 'orange', warranty: 'teal', other: 'gray' };
+    
+    Array.from(this.files).forEach(function(file) {
+      documentFiles.push({ file: file, type: type });
+      var div = document.createElement('div');
+      div.className = 'flex items-center gap-4 p-3 bg-gray-50 rounded-lg';
+      div.innerHTML = '<i data-lucide="file-text" class="w-6 h-6 text-' + (typeColors[type] || 'gray') + '-500"></i>' +
+        '<div class="flex-1"><div class="font-medium text-gray-900">' + file.name + '</div>' +
+        '<div class="text-sm text-gray-500">' + (typeLabels[type] || 'Документ') + ' • ' + (file.size / 1024).toFixed(1) + ' KB • <span class="text-blue-600">Новый</span></div></div>' +
+        '<button type="button" onclick="this.closest(\'.flex\').remove()" class="p-2 text-red-600 hover:bg-red-50 rounded-lg"><i data-lucide="trash-2" class="w-5 h-5"></i></button>';
+      documentsList.appendChild(div);
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    });
+    this.value = '';
+  });
+  
+  window.deleteDocument = async function(docId) {
+    if (!productId || !confirm('Удалить документ?')) return;
+    try {
+      var res = await fetch('/admin/products/' + productId + '/documents/' + docId, {
+        method: 'DELETE',
+        headers: { 'X-CSRF-Token': csrfToken }
+      });
+      var data = await res.json();
+      if (data.success) {
+        var el = document.querySelector('[data-doc-id="' + docId + '"]');
+        if (el) el.remove();
+      } else alert(data.message || 'Ошибка');
+    } catch (e) { alert('Ошибка сети'); }
+  };
+  
+  // ========== СОХРАНЕНИЕ ФОРМЫ ==========
+  document.getElementById('saveProductBtn').addEventListener('click', async function() {
+    var form = document.getElementById('productForm');
+    var formData = new FormData(form);
+    
+    // Собираем характеристики в JSON
+    var chars = {};
+    var keys = form.querySelectorAll('input[name="charKey[]"]');
+    var vals = form.querySelectorAll('input[name="charValue[]"]');
+    keys.forEach(function(keyInput, i) {
+      if (keyInput.value && vals[i] && vals[i].value) {
+        chars[keyInput.value.trim()] = vals[i].value.trim();
+      }
+    });
+    formData.delete('charKey[]');
+    formData.delete('charValue[]');
+    formData.append('characteristics', JSON.stringify(chars));
+    
+    // Добавляем новые файлы галереи
+    galleryFiles.forEach(function(file) {
+      formData.append('galleryFiles', file);
+    });
+    
+    // Добавляем новые документы
+    documentFiles.forEach(function(item) {
+      formData.append('documentFiles', item.file);
+    });
+    
+    // Исправляем чекбоксы
+    if (!form.querySelector('input[name="isVisible"]').checked) {
+      formData.set('isVisible', 'false');
+    }
+    if (!form.querySelector('input[name="isFeatured"]').checked) {
+      formData.set('isFeatured', 'false');
+    }
+    if (!form.querySelector('input[name="isNewProduct"]').checked) {
+      formData.set('isNewProduct', 'false');
+    }
+    
+    try {
+      var url = isEdit ? '/admin/products/' + productId : '/admin/products';
+      var method = isEdit ? 'PUT' : 'POST';
+      
+      var res = await fetch(url, {
+        method: method,
+        headers: { 'X-CSRF-Token': csrfToken },
+        body: formData
+      });
+      
+      var data = await res.json();
+      
+      if (data.success) {
+        window.location.href = '/admin/products';
+      } else {
+        alert(data.message || 'Ошибка сохранения');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Ошибка сети');
+    }
+  });
+  
+})();
+</script>

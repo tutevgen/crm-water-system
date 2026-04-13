@@ -1,0 +1,120 @@
+<%# views/admin/technician-form.ejs %>
+<% layout('layouts/default') %>
+
+<div class="p-6">
+  <!-- Заголовок -->
+  <div class="mb-6">
+    <a href="/admin/technicians" class="text-gray-600 hover:text-gray-900 text-sm flex items-center mb-2">
+      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+      Назад к списку
+    </a>
+    <h1 class="text-2xl font-bold text-gray-900"><%= title %></h1>
+  </div>
+
+  <%# Сообщения об ошибках %>
+  <% if (typeof error !== 'undefined' && error && error.length > 0) { %>
+    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded">
+      <% const errorMessages = Array.isArray(error) ? error : [error]; %>
+      <% errorMessages.forEach(msg => { %>
+        <div>• <%= msg %></div>
+      <% }); %>
+    </div>
+  <% } %>
+
+  <!-- Форма -->
+  <div class="bg-white rounded-xl shadow-sm p-6 max-w-2xl">
+    <form method="POST" 
+          action="<%= isEdit ? `/admin/technicians/${installer._id}` : '/admin/technicians' %>"
+          class="space-y-6">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      
+      <!-- Имя -->
+      <div>
+        <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
+          Имя <span class="text-red-500">*</span>
+        </label>
+        <input type="text" id="name" name="name" required
+               value="<%= installer?.name || '' %>"
+               placeholder="Иванов Иван Иванович"
+               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400">
+      </div>
+
+      <!-- Email -->
+      <div>
+        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
+          Email
+        </label>
+        <input type="email" id="email" name="email"
+               value="<%= installer?.email || '' %>"
+               placeholder="installer@example.com"
+               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400">
+        <p class="text-xs text-gray-500 mt-1">Используется для входа в систему</p>
+      </div>
+
+      <!-- Телефон -->
+      <div>
+        <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">
+          Телефон
+        </label>
+        <input type="tel" id="phone" name="phone"
+               value="<%= installer?.phone || '' %>"
+               placeholder="+7 (999) 123-45-67"
+               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400">
+        <p class="text-xs text-gray-500 mt-1">Укажите email или телефон (или оба)</p>
+      </div>
+
+      <!-- Пароль -->
+      <div>
+        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
+          Пароль <%= isEdit ? '' : '<span class="text-red-500">*</span>' %>
+        </label>
+        <input type="password" id="password" name="password"
+               <%= isEdit ? '' : 'required' %>
+               minlength="6"
+               placeholder="<%= isEdit ? 'Оставьте пустым, чтобы не менять' : 'Минимум 6 символов' %>"
+               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400">
+        <% if (isEdit) { %>
+          <p class="text-xs text-gray-500 mt-1">Оставьте пустым, если не хотите менять пароль</p>
+        <% } %>
+      </div>
+
+      <!-- Адрес -->
+      <div>
+        <label for="address" class="block text-sm font-medium text-gray-700 mb-1">
+          Адрес
+        </label>
+        <input type="text" id="address" name="address"
+               value="<%= installer?.address || '' %>"
+               placeholder="г. Москва, ул. Примерная, д. 1"
+               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400">
+      </div>
+
+      <!-- Статус (только при редактировании) -->
+      <% if (isEdit) { %>
+        <div>
+          <label class="flex items-center">
+            <input type="checkbox" name="isActive" 
+                   <%= installer?.isActive !== false ? 'checked' : '' %>
+                   class="w-4 h-4 text-gray-900 border-gray-300 rounded focus:ring-gray-500">
+            <span class="ml-2 text-sm text-gray-700">Активен</span>
+          </label>
+          <p class="text-xs text-gray-500 mt-1">Неактивные монтажники не могут входить в систему</p>
+        </div>
+      <% } %>
+
+      <!-- Кнопки -->
+      <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+        <a href="/admin/technicians" 
+           class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+          Отмена
+        </a>
+        <button type="submit" 
+                class="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition">
+          <%= isEdit ? 'Сохранить изменения' : 'Создать монтажника' %>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

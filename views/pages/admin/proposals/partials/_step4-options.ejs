@@ -1,0 +1,70 @@
+<div id="step4" class="step-content">
+  <div class="bg-white rounded-xl border shadow-sm p-6">
+    <h2 class="text-lg font-semibold mb-6 flex items-center gap-2">
+      <i data-lucide="star" class="w-5 h-5 text-blue-500"></i>
+      Рекомендуемые опции
+    </h2>
+    
+    <p class="text-sm text-gray-600 mb-6">
+      Эти опции НЕ входят в стоимость, но будут показаны клиенту как рекомендации
+    </p>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <label class="flex items-start gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+        <input type="checkbox" name="recommendedOptions[]" value="uv_sterilizer" class="mt-1 text-blue-600">
+        <div class="flex-1">
+          <div class="font-medium">УФ-стерилизатор</div>
+          <div class="text-sm text-gray-600 mt-1">Обеззараживание воды ультрафиолетом</div>
+          <div class="text-blue-600 font-semibold mt-2">12 500 ₽</div>
+        </div>
+      </label>
+      
+      <label class="flex items-start gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+        <input type="checkbox" name="recommendedOptions[]" value="leak_protection" class="mt-1 text-blue-600">
+        <div class="flex-1">
+          <div class="font-medium">Защита от протечек</div>
+          <div class="text-sm text-gray-600 mt-1">Автоматическое отключение при протечке</div>
+          <div class="text-blue-600 font-semibold mt-2">8 500 ₽</div>
+        </div>
+      </label>
+      
+      <label class="flex items-start gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+        <input type="checkbox" name="recommendedOptions[]" value="thermal_cover" class="mt-1 text-blue-600">
+        <div class="flex-1">
+          <div class="font-medium">Термочехол</div>
+          <div class="text-sm text-gray-600 mt-1">Защита от перепадов температуры</div>
+          <div class="text-blue-600 font-semibold mt-2">4 500 ₽</div>
+        </div>
+      </label>
+      
+      <label class="flex items-start gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+        <input type="checkbox" name="recommendedOptions[]" value="ro_system" class="mt-1 text-blue-600">
+        <div class="flex-1">
+          <div class="font-medium">Обратный осмос</div>
+          <div class="text-sm text-gray-600 mt-1">Питьевая вода высшего качества</div>
+          <div class="text-blue-600 font-semibold mt-2">18 900 ₽</div>
+        </div>
+      </label>
+      
+      <label class="flex items-start gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+        <input type="checkbox" name="recommendedOptions[]" value="bypass" class="mt-1 text-blue-600">
+        <div class="flex-1">
+          <div class="font-medium">Байпас</div>
+          <div class="text-sm text-gray-600 mt-1">Обход системы при обслуживании</div>
+          <div class="text-blue-600 font-semibold mt-2">3 200 ₽</div>
+        </div>
+      </label>
+    </div>
+    
+    <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+      <div class="flex gap-2">
+        <i data-lucide="info" class="w-5 h-5 text-yellow-600 flex-shrink-0"></i>
+        <div class="text-sm text-yellow-800">
+          <p class="font-medium mb-1">Обратите внимание</p>
+          <p>Рекомендуемые опции отображаются отдельным блоком в КП и НЕ включаются в итоговую стоимость. 
+          Клиент может заказать их дополнительно.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

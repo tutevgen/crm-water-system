@@ -1,0 +1,114 @@
+<%# views/pages/admin/managers.ejs %>
+<% layout('layouts/default') %>
+<%
+  var mgrs = typeof managers !== 'undefined' ? managers : [];
+  var fmtDate = function(d){ return d ? new Date(d).toLocaleDateString('ru-RU') : '—'; };
+%>
+
+<div class="p-4 md:p-6 max-w-5xl mx-auto space-y-5">
+
+  <div class="flex items-center justify-between flex-wrap gap-3">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Менеджеры</h1>
+      <p class="text-sm text-gray-500 mt-1">Управление менеджерами системы</p>
+    </div>
+    <button onclick="document.getElementById('addModal').classList.remove('hidden')" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 flex items-center gap-2 shadow-sm">
+      <i data-lucide="plus" class="w-4 h-4"></i> Добавить менеджера
+    </button>
+  </div>
+
+  <!-- Статистика -->
+  <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+    <div class="bg-white rounded-xl border p-4 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center"><i data-lucide="briefcase" class="w-5 h-5 text-blue-600"></i></div>
+      <div><p class="text-2xl font-bold"><%= mgrs.length %></p><p class="text-xs text-gray-500">Всего</p></div>
+    </div>
+    <div class="bg-white rounded-xl border p-4 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center"><i data-lucide="check-circle" class="w-5 h-5 text-green-600"></i></div>
+      <div><p class="text-2xl font-bold"><%= mgrs.filter(m => m.isVerified).length %></p><p class="text-xs text-gray-500">Верифицированы</p></div>
+    </div>
+    <div class="bg-white rounded-xl border p-4 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center"><i data-lucide="user-plus" class="w-5 h-5 text-purple-600"></i></div>
+      <div><p class="text-2xl font-bold"><%= mgrs.filter(m => { var d = new Date(m.createdAt); var now = new Date(); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); }).length %></p><p class="text-xs text-gray-500">Новые за месяц</p></div>
+    </div>
+  </div>
+
+  <!-- Список -->
+  <% if(mgrs.length === 0){ %>
+  <div class="bg-white rounded-xl shadow-sm border p-12 text-center">
+    <i data-lucide="briefcase" class="w-16 h-16 mx-auto text-gray-300 mb-4"></i>
+    <p class="text-gray-500">Менеджеров пока нет</p>
+  </div>
+  <% } else { %>
+  <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 border-b">
+        <tr>
+          <th class="text-left px-4 py-3 font-medium text-gray-600">Менеджер</th>
+          <th class="text-left px-4 py-3 font-medium text-gray-600">Email</th>
+          <th class="text-left px-4 py-3 font-medium text-gray-600">Телефон</th>
+          <th class="text-left px-4 py-3 font-medium text-gray-600">Регистрация</th>
+          <th class="text-center px-4 py-3 font-medium text-gray-600">Статус</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y">
+        <% mgrs.forEach(function(m){ %>
+        <tr class="hover:bg-gray-50">
+          <td class="px-4 py-3 font-medium text-gray-900"><%= m.name %></td>
+          <td class="px-4 py-3 text-gray-600"><%= m.email || '—' %></td>
+          <td class="px-4 py-3 text-gray-600"><%= m.phone || '—' %></td>
+          <td class="px-4 py-3 text-gray-500 text-xs"><%= fmtDate(m.createdAt) %></td>
+          <td class="px-4 py-3 text-center">
+            <% if(m.isVerified){ %>
+              <span class="inline-flex items-center gap-1 text-xs text-green-600"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Активен</span>
+            <% } else { %>
+              <span class="text-xs text-gray-400">Не верифицирован</span>
+            <% } %>
+          </td>
+          <td class="px-4 py-3">
+            <a href="/admin/clients/<%= m._id %>/edit" class="text-blue-600 hover:text-blue-800 text-xs">Редактировать</a>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</div>
+
+<!-- Модалка добавления -->
+<div id="addModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+    <div class="p-5 border-b flex items-center justify-between">
+      <h3 class="text-lg font-bold">Новый менеджер</h3>
+      <button onclick="document.getElementById('addModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <form action="/admin/technicians" method="POST" class="p-5 space-y-4" id="mgrForm">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="role" value="manager">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">ФИО *</label>
+        <input type="text" name="name" required class="w-full border rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <input type="email" name="email" class="w-full border rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Телефон</label>
+          <input type="tel" name="phone" class="w-full border rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500">
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Пароль *</label>
+        <input type="password" name="password" required minlength="6" class="w-full border rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div class="flex gap-3 justify-end pt-2">
+        <button type="button" onclick="document.getElementById('addModal').classList.add('hidden')" class="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg text-sm">Отмена</button>
+        <button type="submit" class="px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">Создать</button>
+      </div>
+    </form>
+  </div>
+</div>
